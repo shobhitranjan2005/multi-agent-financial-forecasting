@@ -115,6 +115,28 @@ def realised_volatility(df: pd.DataFrame, window: int = 21) -> dict | None:
         return None
 
 
+def price_band_check(last_close: float, target: float, band_pct: float = 20.0) -> dict:
+    """NSE price-band sanity check on a single-session move.
+
+    NSE caps most scrips at +/-20% a day, and 10%/5%/2% for many mid- and
+    small-caps (5% under F&O ban / surveillance). A one-session target outside
+    the applicable band is arithmetically impossible, not merely optimistic —
+    so flag it before it reaches a report.
+    """
+    if last_close <= 0:
+        return {"within_band": None, "note": "invalid last close"}
+    move_pct = (target - last_close) / last_close * 100.0
+    within = abs(move_pct) <= band_pct
+    return {
+        "within_band": within,
+        "implied_move_pct": round(move_pct, 2),
+        "band_pct": band_pct,
+        "note": None if within else (
+            f"target implies {move_pct:+.1f}% in one session; NSE band is +/-{band_pct:.0f}%"
+        ),
+    }
+
+
 def compute_all(df: pd.DataFrame) -> dict:
     """One-shot computation for the Technical agent."""
     return {

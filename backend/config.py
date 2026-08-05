@@ -1,5 +1,7 @@
 """Centralised configuration loaded from .env.
 
+Scope: Indian equities only — NSE (.NS) primary, BSE (.BO) secondary. INR, Asia/Kolkata.
+
 Never hardcode API keys. Never print secrets. Never commit .env.
 """
 import os
@@ -29,6 +31,52 @@ class Config:
 
     # Indicators
     SMA200_MIN_HISTORY_DAYS: int = 730         # >= 2 years so SMA-200 is never NaN
+
+    # ---- India-only market constants ----
+    MARKET_TZ: str = "Asia/Kolkata"
+    CURRENCY: str = "INR"
+    CURRENCY_SYMBOL: str = "₹"
+    ALLOWED_SUFFIXES: tuple[str, ...] = (".NS", ".BO")   # NSE primary, BSE secondary
+    DEFAULT_SUFFIX: str = ".NS"                          # bare "RELIANCE" -> NSE
+
+    BENCHMARK: str = "^NSEI"                   # NIFTY 50 — the benchmark for relative scoring
+    BENCHMARK_ALT: str = "^BSESN"              # SENSEX
+    VIX_SYMBOL: str = "^INDIAVIX"
+    USDINR_SYMBOL: str = "INR=X"
+    CRUDE_SYMBOL: str = "BZ=F"                 # Brent — India imports ~85% of its crude
+
+    # NIFTY sectoral indices (Yahoo symbols) — replaces US sector ETFs
+    SECTOR_INDICES: dict[str, str] = {
+        "IT": "^CNXIT",
+        "BANK": "^NSEBANK",
+        "AUTO": "^CNXAUTO",
+        "PHARMA": "^CNXPHARMA",
+        "FMCG": "^CNXFMCG",
+        "METAL": "^CNXMETAL",
+        "ENERGY": "^CNXENERGY",
+        "REALTY": "^CNXREALTY",
+    }
+
+    # NSE cash-market bhavcopy archive (keyless, but needs a browser User-Agent).
+    # Doubles as the fallback price source AND the trading-calendar oracle:
+    # a file exists for a date <=> NSE traded that day.
+    NSE_BHAVCOPY_URL: str = (
+        "https://nsearchives.nseindia.com/content/cm/"
+        "BhavCopy_NSE_CM_0_0_0_{yyyymmdd}_F_0000.csv.zip"
+    )
+    BROWSER_UA: str = (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+    )
+    NSE_CALENDAR_FILE: Path = DATA_DIR / "nse_calendar.json"
+
+    # Forecast horizon is measured in TRADING SESSIONS, never calendar days.
+    HORIZON_SESSIONS: int = 21
+
+    # SEBI LODR Reg. 33: quarterly results filed within 45 days of quarter end
+    # (annual: 60). A quarter is only "public" once that window has elapsed.
+    SEBI_QUARTERLY_FILING_LAG_DAYS: int = 45
+    SEBI_ANNUAL_FILING_LAG_DAYS: int = 60
 
     # Paths
     @staticmethod
