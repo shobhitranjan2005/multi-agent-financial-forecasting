@@ -10,3 +10,6 @@ This file stores a compact version of our conversation and prompts for version c
 - **Action:** Confirmed that Git is a distributed version control system and the `.git` folder fully maintains local history regardless of remote pushes.
 - **Prompt:** User asked about creating a new file in Git to store a compact version of every prompt and chat history.
 - **Action:** Created this `prompt_history.md` file to maintain a continuous, compact log of our work.
+
+- **Prompt:** User pasted a changelog showing the project scope was narrowed to India-only (NSE/BSE).
+- **Action:** Summarized the data source fixes, NSE logic additions, and documentation updates, then logged it here.
