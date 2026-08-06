@@ -110,6 +110,10 @@ def resolve(symbol: str, verify: bool = True) -> str:
 
     raw = symbol.strip().upper()
 
+    # Pass through macro & benchmark index symbols cleanly
+    if raw.startswith("^") or "=X" in raw or "=F" in raw or raw in ("DEXINUS", "INDIRLTLT01STM"):
+        return raw
+
     if "." in raw:
         base, _, suffix = raw.rpartition(".")
         suffix = f".{suffix}"
@@ -132,6 +136,7 @@ def resolve(symbol: str, verify: bool = True) -> str:
             )
 
     return f"{base}{suffix}"
+
 
 
 def is_indian(symbol: str, verify: bool = True) -> bool:

@@ -22,6 +22,8 @@ from typing import Any, Optional
 from backend.config import Config
 
 
+import threading
+
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS cache (
     key        TEXT PRIMARY KEY,
@@ -35,35 +37,39 @@ CREATE INDEX IF NOT EXISTS idx_cache_created ON cache(created_at);
 
 
 class Cache:
-    """Single SQLite store with TTL semantics. One connection per thread."""
+    """Single SQLite store with TTL semantics. Thread-safe with RLock."""
 
     def __init__(self, db_path: Optional[Path] = None) -> None:
         Config.ensure_dirs()
         self.db_path = db_path or Config.CACHE_DB
+        self._lock = threading.RLock()
         self._conn = sqlite3.connect(self.db_path, check_same_thread=False)
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._conn.executescript(_SCHEMA)
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._conn.executescript(_SCHEMA)
+            self._conn.commit()
 
     # ---- low-level helpers ----
     def _get(self, key: str) -> Any | None:
-        row = self._conn.execute(
-            "SELECT value, created_at, ttl FROM cache WHERE key = ?", (key,)
-        ).fetchone()
-        if row is None:
-            return None
-        value_json, created_at, ttl = row
-        if ttl > 0 and (time.time() - created_at) > ttl:
-            # expired — leave it; do not delete (cheap to overwrite later)
-            return None
-        return json.loads(value_json)
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT value, created_at, ttl FROM cache WHERE key = ?", (key,)
+            ).fetchone()
+            if row is None:
+                return None
+            value_json, created_at, ttl = row
+            if ttl > 0 and (time.time() - created_at) > ttl:
+                return None
+            return json.loads(value_json)
 
     def _set(self, key: str, value: Any, ttl: float) -> None:
-        self._conn.execute(
-            "INSERT OR REPLACE INTO cache (key, value, created_at, ttl) VALUES (?, ?, ?, ?)",
-            (key, json.dumps(value, default=str), time.time(), ttl),
-        )
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(
+                "INSERT OR REPLACE INTO cache (key, value, created_at, ttl) VALUES (?, ?, ?, ?)",
+                (key, json.dumps(value, default=str), time.time(), ttl),
+            )
+            self._conn.commit()
+
 
     def get_or_set(self, key: str, ttl: float, loader) -> Any:
         """Return cached value if present and fresh; otherwise call loader(), cache, return."""
