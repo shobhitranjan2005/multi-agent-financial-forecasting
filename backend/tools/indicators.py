@@ -37,6 +37,23 @@ def rsi(df: pd.DataFrame, period: int = 14) -> dict | None:
     return {"value": round(val, 2), "reading": reading, "period": period}
 
 
+def _col(row: pd.Series, prefix: str) -> float | None:
+    """Pick a pandas-ta column by NAME prefix, never by position.
+
+    pandas_ta_classic returns macd as [MACD, MACDh, MACDs] and bbands as
+    [BBL, BBM, BBU, BBB, BBP] -- neither order is the intuitive one. Indexing
+    positionally silently swaps the histogram with the signal line, and the
+    upper Bollinger band with the lower. Both errors survive every type check
+    and every schema validation, and both reverse the reading handed to the
+    model. So columns are matched by name.
+    """
+    for name in row.index:
+        if str(name).startswith(prefix):
+            v = row[name]
+            return None if pd.isna(v) else float(v)
+    return None
+
+
 def macd(df: pd.DataFrame) -> dict | None:
     if ta is None or len(df) < 26:
         return None
@@ -45,14 +62,17 @@ def macd(df: pd.DataFrame) -> dict | None:
         if m is None or m.empty:
             return None
         last = m.iloc[-1]
-        macd_line = float(last.iloc[0])
-        hist = float(last.iloc[2])
-        bias = "Bullish" if hist > 0 else "Bearish"
+        # MACDh_ before MACD_ would be ambiguous, so match the longer keys first.
+        hist = _col(last, "MACDh")
+        signal_line = _col(last, "MACDs")
+        macd_line = _col(last, "MACD_")
+        if macd_line is None or hist is None:
+            return None
         return {
             "macd": round(macd_line, 4),
-            "signal": round(float(last.iloc[1]), 4),
+            "signal": None if signal_line is None else round(signal_line, 4),
             "histogram": round(hist, 4),
-            "bias": bias,
+            "bias": "Bullish" if hist > 0 else "Bearish",
         }
     except Exception:
         return None
@@ -81,10 +101,13 @@ def bollinger(df: pd.DataFrame, period: int = 20) -> dict | None:
         if b is None or b.empty:
             return None
         last = b.iloc[-1]
+        upper, middle, lower = _col(last, "BBU"), _col(last, "BBM"), _col(last, "BBL")
+        if None in (upper, middle, lower):
+            return None
         return {
-            "upper": round(float(last.iloc[0]), 2),
-            "middle": round(float(last.iloc[1]), 2),
-            "lower": round(float(last.iloc[2]), 2),
+            "upper": round(upper, 2),
+            "middle": round(middle, 2),
+            "lower": round(lower, 2),
         }
     except Exception:
         return None

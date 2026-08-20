@@ -71,10 +71,10 @@ flowchart TD
         Orch --> MA[Macro & Sector Agent]
     end
 
-    TA --- C[(Cached Data Layer<br/>yfinance → Stooq fallback)]
+    TA --- C[(Cached Data Layer<br/>yfinance .NS → NSE bhavcopy fallback)]
     FA --- C
-    SA --- N[(News RSS / API)]
-    MA --- M[(FRED / RBI / Sector ETFs)]
+    SA --- N[(GDELT — India-scoped)]
+    MA --- M[(FRED / RBI / NIFTY sectoral indices)]
 
     TA --> Rec[Reconciliation Gate<br/>every number re-checked vs source]
     FA --> Rec
@@ -134,7 +134,9 @@ Each phase has an **exit gate**: an objective, checkable condition. Do not start
 - [ ] Repo scaffold, virtualenv, `requirements.txt` pinned. **Initialise git on day one.**
 - [ ] Secure keys: Gemini, news API. (`yfinance` needs no key — that is precisely why it is fragile.)
 - [ ] **Build `cache.py` before any other data code.** On-disk cache (SQLite or parquet) keyed by `(ticker, field, as_of)`, in front of *every* external call. Not an optimisation — a prerequisite. Four parallel agents without a cache will trigger Yahoo rate limiting on demo day.
-- [ ] `market_data.py` — OHLCV fetch with **automatic Stooq fallback on HTTP 429**, and a hard `as_of` cutoff parameter.
+- [ ] `tickers.py` — the India boundary: resolve to `.NS`/`.BO` against the NSE symbol master, reject everything else.
+- [ ] `market_data.py` — OHLCV fetch with **automatic NSE-bhavcopy fallback on HTTP 429**, and a hard `as_of` cutoff parameter.
+- [ ] `calendar_nse.py` — NSE trading calendar from bhavcopy availability; the forecast horizon is **21 sessions**, not 21 calendar days.
 - [ ] `indicators.py` — RSI, MACD, moving averages, ATR, realised volatility.
 - [ ] **Ship the single-LLM baseline now:** one Gemini call, given the same data, returns the same Pydantic forecast schema. This is the thing the multi-agent system must beat.
 - [ ] One specialist (Technical) implemented end to end as the pattern for the rest.
@@ -226,7 +228,8 @@ Each phase has an **exit gate**: an objective, checkable condition. Do not start
 - **Agent framework:** **LangGraph** (v1.1.x stable; supervisor pattern is the dominant production topology, and JPMorgan's Ask D.A.V.I.D. is built on it). Prefer it over CrewAI for explicit state and checkpointing.
 - **LLM:** Gemini API via `gemini-flash-latest`. **Free tier: ~1,500 requests/day, 15 requests/minute, 1M TPM.**
   - Budget implication: a full 7-agent forecast ≈ 7–10 calls → **~150–200 forecasts/day**, and **15 RPM caps you at ~2 forecasts/minute**. Ablation sweeps must be run overnight, not the night before submission. Note the free tier may use prompts for training — avoid anything sensitive.
-- **Data:** `yfinance` (primary, **cached, mandatory**) → **Stooq** fallback (no API key, decades of history). `pandas-ta-classic` for indicators (the maintained fork; original `pandas-ta` is at discontinuation risk).
+- **Data:** `yfinance` `.NS`/`.BO` (primary, **cached, mandatory**) → **NSE bhavcopy archive** fallback (no API key, browser UA required; also supplies the trading calendar and a survivorship-bias-free universe). `pandas-ta-classic` for indicators (the maintained fork; original `pandas-ta` is at discontinuation risk).
+  - ⚠️ *Stooq is no longer viable (verified 2026-08-06): it serves a JS proof-of-work page to scripted clients.*
   - ⚠️ `yfinance` is an unofficial scraper. Since Yahoo's Feb-2025 redesign it rate-limits hard (`YFRateLimitError` / HTTP 429). **Alpha Vantage's free tier is now 25 requests/day** — it cannot serve as a backup.
 - **Backend:** FastAPI. **Frontend:** Streamlit (primary), React/Next.js only if time allows.
 - **Validation:** Pydantic v2 everywhere.
@@ -237,7 +240,7 @@ Each phase has an **exit gate**: an objective, checkable condition. Do not start
 
 | Risk | Likelihood | Mitigation |
 | :--- | :--- | :--- |
-| Yahoo rate-limits / breaks | **High** | Cache-first architecture; Stooq fallback; never fetch live during a demo |
+| Yahoo rate-limits / breaks | **High** | Cache-first architecture; **NSE bhavcopy fallback**; never fetch live during a demo |
 | Gemini free-tier quota exhausted mid-experiment | **High** | Cache LLM responses keyed by prompt hash; run sweeps overnight; checkpoint runs |
 | Lookahead bias invalidates results | **Certain if ignored** | Phase 2 protocol; post-cutoff window; LAP probe |
 | "Not novel — TradingAgents exists" | **Certain if unaddressed** | Cite it explicitly; position as leakage-free evaluation + ablation + NSE focus |

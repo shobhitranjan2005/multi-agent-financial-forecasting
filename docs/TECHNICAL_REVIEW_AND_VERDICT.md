@@ -43,9 +43,13 @@ Everything else in this review is fix-as-you-go.
 | 9 | Architecture already published | arXiv:2412.20138 + GitHub | ✅ Confirmed |
 | 10 | NewsAPI free-tier viability | Vendor pricing pages | ✅ Confirmed unusable for backtest |
 | 11 | GDELT global + free | gdeltproject.org | ✅ Confirmed — 100+ languages, 1979→present |
-| 12 | yfinance global coverage | Yahoo exchange list | ✅ Confirmed — global via suffixes |
+| 12 | yfinance NSE/BSE coverage | Live probe 2026-08-06 | ✅ Confirmed — `RELIANCE.NS`, INR, Asia/Kolkata, from 1996 |
 | 13 | FRED needs its own key | FRED API docs | ✅ Confirmed — separate registration |
 | 14 | Recharts candlestick support | Library docs | ✅ Confirmed — no native candlestick |
+| 15 | Stooq keyless CSV fallback | Live probe 2026-08-06 | ❌ **Refuted — now a JS proof-of-work page. Fallback replaced (§6.1)** |
+| 16 | NSE bhavcopy archive keyless | Live probe 2026-08-06 | ✅ Confirmed — 200 OK w/ browser UA; 404 on holidays |
+| 17 | FRED India macro series | Live probe 2026-08-06 | ⚠️ **Partial — FX/10Y/call-rate live; CPI, IIP, discount rate stale or dead (§6.3)** |
+| 18 | GDELT rate-limit behaviour | Live probe 2026-08-06 | ⚠️ **Returns the limit message as HTTP 200 body — cacheable as fake data (§6.2)** |
 
 ---
 
@@ -181,8 +185,8 @@ reports: Annotated[list, operator.add]
 | Issue | Impact | Fix |
 | :--- | :--- | :--- |
 | **SMA-200 on a 1M window** | Silent `NaN` | Always fetch ≥ 2 years regardless of chart range |
-| **Stooq ≠ yfinance schema** | Fallback breaks during the outage it exists for | Normalise columns/adjustments at the boundary; unit-test the fallback path |
-| **yfinance nulls on non-US tickers** | Agent crashes or invents a number | Explicit null handling; agents must say "unavailable", never guess |
+| **Bhavcopy ≠ yfinance schema** | Fallback breaks during the outage it exists for | Normalise columns **and adjustment basis** at the boundary (bhavcopy is unadjusted); record the source on every frame; unit-test the fallback path |
+| **yfinance nulls on `.NS` fundamentals** | Agent crashes or invents a number | Explicit null handling; agents must say "unavailable", never guess. Log the null rate per field — it is a results table, and it explains any large-cap vs mid-cap accuracy gap |
 | **No news dedup** | Same story double-counts, skewing polarity | Dedup by URL + title similarity |
 | **No version pinning** | LangGraph breaking changes | `pip freeze > requirements.txt` after first good install |
 | **FRED key not provisioned** | Blocks Task 2.6 mid-Phase 2 | Register in Phase 1 alongside Gemini |
@@ -216,7 +220,7 @@ You cannot set out to prove a conclusion. If the debate layer doesn't help, that
 | **Leakage-free evaluation** | Most published multi-agent finance results do not control for it |
 | **Debate ablation** | Does the debate earn its ~2× token cost? Almost nobody measures this |
 | **Confidence calibration** | When it says 80%, is it right 80% of the time? Rarely reported |
-| **Global coverage** | The literature is overwhelmingly US-large-cap (see §6) |
+| **Indian-market focus** | The literature is overwhelmingly US-large-cap; NSE is under-studied (see §6) |
 
 **Proposed research question:**
 > Under an evaluation protocol that provably excludes lookahead bias, does adversarial multi-agent debate improve forecast accuracy and confidence calibration over (a) a single-LLM baseline and (b) the same specialists without debate — and is any gain justified by its token cost?
@@ -225,54 +229,94 @@ Answerable either way. That is what makes it a research project.
 
 ---
 
-## 6. 🌍 Worldwide Free Data Strategy
+## 6. 🇮🇳 Indian-Market Free Data Strategy
 
-**Requirement noted: global coverage, free, not implemented yet.** This section is design-only.
+**Scope decision (revised 2026-08-06): NSE/BSE only.** The earlier "worldwide coverage" plan is
+withdrawn. Narrowing is not a retreat — a single market gives one trading calendar, one currency and
+one regulator, which is what makes the leakage-free `as_of` protocol *provable* rather than
+approximate. It also buys three India-specific mechanisms (point-in-time universe, SEBI filing lag,
+NIFTY-relative scoring) that a worldwide build cannot have.
 
-**Good news: fully global coverage is achievable at zero cost.**
+### 6.1 Price data — yfinance `.NS` / `.BO`, with an India-native fallback
 
-### 6.1 Price data — yfinance covers the world via exchange suffixes
+*Verified 2026-08-06:* `RELIANCE.NS` returns `currency: INR`, `exchange: NSE`,
+`timezone: Asia/Kolkata`, history from **1996**.
 
-| Market | Suffix | Example |
-| :--- | :--- | :--- |
-| USA | *(none)* | `AAPL` |
-| India NSE | `.NS` | `RELIANCE.NS` |
-| London | `.L` | `BP.L` |
-| Tokyo | `.T` | `7203.T` |
-| Germany XETRA | `.DE` | `SAP.DE` |
-| Hong Kong | `.HK` | `0700.HK` |
-| Australia ASX | `.AX` | `BHP.AX` |
-| Paris | `.PA` | `AIR.PA` |
-| Toronto | `.TO` | `RY.TO` |
+**The Stooq fallback in the previous version of this review is dead.** *Verified 2026-08-06:*
+`stooq.com/q/d/l/` now answers scripted clients with a **JavaScript proof-of-work challenge page**,
+not CSV — so the documented fallback would have silently returned nothing on the exact day it was
+needed. It is replaced by:
 
-Yahoo maintains the authoritative suffix list. **Design the ticker layer to accept any suffix from day one** — hardcoding a market is the mistake to avoid.
+| | NSE daily bhavcopy archive |
+| :--- | :--- |
+| URL | `nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip` |
+| Key | None — but a **browser `User-Agent` is required** |
+| Verified | HTTP 200, ~170 KB/day (2025-01-15); 404 on holidays (2025-03-14 Holi) and weekends |
+| Contents | Every NSE cash-market instrument for that day, UDiFF CSV |
+| Caveat | Prices are **unadjusted** for splits/bonuses — never mix with yfinance auto-adjust rows |
 
-### 6.2 News — GDELT is the correct global choice
+It pays for itself three times: **fallback prices**, **the trading calendar** (file exists ⟺ NSE
+traded), and **a survivorship-bias-free universe** (what actually traded on a given date).
+Cross-check performed: yfinance and bhavcopy agree exactly on RELIANCE 2025-01-15
+(1244.95 / 1257.00 / 1241.85 / **1252.20**).
 
-Verified: **100+ languages, every country, archive from 1 Jan 1979, updates every 15 minutes, 100% free**, queryable via BigQuery.
+### 6.2 News — GDELT, scoped to India
 
-This solves what NewsAPI cannot: NewsAPI's free tier is **100 req/day, 1-month archive, 24-hour delay, localhost-only** — unusable for any historical evaluation.
+Verified: **100+ languages, archive from 1 Jan 1979, updates every 15 minutes, 100% free.** Scope
+queries with `sourcecountry:india` and the company's registered name.
 
-**Trade-off to document:** GDELT gives tone/theme/metadata, **not full article text**. Adequate for a sentiment agent; state it as a limitation.
+This solves what NewsAPI cannot: NewsAPI's free tier is **100 req/day, 1-month archive, 24-hour delay,
+localhost-only** — unusable for any historical evaluation.
 
-### 6.3 Recommended stack
+**⚠️ Rate-limit trap (verified 2026-08-06):** back-to-back GDELT requests return
+`"Please limit requests to one every 5 seconds"` **as the response body with HTTP 200**. It does not
+raise, and a naive cache will store that sentence as if it were news. Detect the string explicitly,
+treat it as retryable, and space requests ≥ 5 s.
 
-| Layer | Source | Cost | Global? |
+**Trade-offs to document:** GDELT gives tone/theme/metadata, **not full article text**. Indian outlets
+syndicate PTI/ANI copy heavily, so dedup by URL + title similarity is mandatory or polarity skews.
+
+### 6.3 Macro — FRED's India coverage is thinner than assumed
+
+*Verified 2026-08-06 by keyless CSV probe (`fred.stlouisfed.org/graph/fredgraph.csv?id=…`):*
+
+| Indicator | Series ID | Last observation | Verdict |
 | :--- | :--- | :--- | :--- |
-| Price / OHLCV | yfinance (cached) → **Stooq** fallback | Free | ✅ |
-| Bulk history | Exchange EOD archives | Free | ✅ |
+| USD/INR (daily) | `DEXINUS` | 2026-07-31 | ✅ Use |
+| India 10Y G-sec yield | `INDIRLTLT01STM` | 2026-05 | ✅ Use |
+| India call-money rate | `IRSTCI01INM156N` | 2026-05 | ✅ Use (policy-stance proxy) |
+| India CPI | `INDCPIALLMINMEI` | **2025-03** | ⚠️ Stale |
+| India IIP | `INDPROINDMISMEI` | **2023-01** | ❌ Dead |
+| India discount rate | `INTDSRINM193N` | **2022-07** | ❌ Dead |
+
+**This would have blocked Phase 2 mid-build.** CPI and the RBI repo rate must come from RBI DBIE /
+MoSPI, or — the honest BTP answer — hardcode the published repo-rate decision calendar and document
+CPI as a limitation. Do not fabricate a series.
+
+### 6.4 Recommended stack
+
+| Layer | Source | Cost | Status |
+| :--- | :--- | :--- | :--- |
+| Price / OHLCV | yfinance `.NS`/`.BO` (cached) → **NSE bhavcopy** fallback | Free | ✅ Verified |
+| Trading calendar | NSE bhavcopy availability | Free | ✅ Verified |
+| Point-in-time universe | NSE bhavcopy daily snapshot | Free | ✅ Verified |
 | Indicators | Computed locally | Free | ✅ |
-| Fundamentals | yfinance ⚠️ *not point-in-time* | Free | Partial |
-| News | **GDELT** | Free | ✅ |
-| Macro | FRED (+ regional central banks) | Free | ✅ |
+| Fundamentals | yfinance ⚠️ *not point-in-time, patchier on `.NS`* | Free | Partial |
+| News | **GDELT**, `sourcecountry:india` | Free | ✅ (rate-limit handling required) |
+| Macro | FRED (FX, 10Y, call rate) + RBI/MoSPI for CPI & repo | Free | Partial — see §6.3 |
+| Benchmark / regime | `^NSEI`, `^BSESN`, `^INDIAVIX`, `INR=X`, `BZ=F`, NIFTY sectoral | Free | ✅ Verified |
 
 **Total data cost: zero.**
 
-### 6.4 The one gap money cannot close
+### 6.5 The one gap money cannot close
 
-**Point-in-time fundamentals.** yfinance returns *today's* restated financials, not what was public on your as-of date. True PIT databases (Compustat PIT, FactSet) are institution-priced.
+**Point-in-time fundamentals.** yfinance returns *today's* restated financials, not what was public on
+your as-of date. True PIT databases (Compustat PIT, FactSet) are institution-priced.
 
-**Mitigation, not purchase:** lag fundamentals ≥ 1 quarter after the reporting date, restrict to slow-moving ratios, and **document the limitation explicitly.** A stated limitation earns credit; a hidden one loses it.
+**Mitigation, not purchase:** apply the **SEBI LODR Reg. 33 filing rule** — a quarter is visible only
+once `as_of` ≥ quarter_end + 45 days (annual: 60) — restrict to slow-moving ratios, and **document the
+limitation explicitly.** The filing rule fixes *timing* leakage; it does not fix *restatement*
+leakage. A stated limitation earns credit; a hidden one loses it.
 
 ---
 
@@ -297,7 +341,7 @@ Relevant because this is a project *about* AI agents — examiners will ask.
 The count is not the issue — **the order is.** Build the ruler before the thing it measures.
 
 ### Phase 1 — Foundation & Walking Skeleton
-Environment (fixing §3), **all** API keys including **FRED**, `cache.py` first, `market_data.py` with `as_of` + Stooq fallback, indicators, **the single-LLM baseline**, one specialist end-to-end, **and a `FinalForecast` schema smoke-test against Gemini** (§4.4).
+Environment (fixing §3), **all** API keys including **FRED**, `cache.py` first, `tickers.py` (the India boundary), `market_data.py` with `as_of` + **NSE bhavcopy fallback**, `calendar_nse.py`, indicators, **the single-LLM baseline**, one specialist end-to-end, **and a `FinalForecast` schema smoke-test against Gemini** (§4.4).
 
 > **Gate:** `python -m forecast <TICKER> --as-of <DATE>` returns a valid schema-conformant forecast twice; the second run makes **zero** network calls. `pip freeze > requirements.txt` committed.
 

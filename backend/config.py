@@ -5,6 +5,7 @@ Scope: Indian equities only — NSE (.NS) primary, BSE (.BO) secondary. INR, Asi
 Never hardcode API keys. Never print secrets. Never commit .env.
 """
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -31,6 +32,12 @@ class Config:
 
     # Indicators
     SMA200_MIN_HISTORY_DAYS: int = 730         # >= 2 years so SMA-200 is never NaN
+
+    # One canonical price fetch per (ticker, as_of) spans this many days back, and
+    # callers slice locally. The price cache key is (ticker, as_of) with no window in
+    # it, so the fetched span must not depend on the window either -- see
+    # market_data.get_price_history.
+    PRICE_FETCH_DAYS: int = 365 * 12           # ~12 years, well beyond any test window
 
     # ---- India-only market constants ----
     MARKET_TZ: str = "Asia/Kolkata"
@@ -82,6 +89,25 @@ class Config:
     @staticmethod
     def ensure_dirs() -> None:
         Config.DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def enable_utf8_console() -> None:
+    """Make stdout/stderr UTF-8 so the rupee sign does not crash the CLI.
+
+    Windows consoles default to cp1252, which has no glyph for U+20B9 (Rs). Every
+    monetary value this project prints carries that sign, so an unguarded print
+    raises UnicodeEncodeError and takes the whole run with it. It is a one-line
+    fix and it fails on exactly the machine the demo runs on, which is the worst
+    possible time to discover it.
+
+    Call this at the top of every CLI entry point. Never inside library code —
+    reconfiguring a stream the caller owns is not a library's business.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass  # already UTF-8, redirected to a pipe that cannot reconfigure, etc.
 
 
 # Sanity check at import time — fail fast if a critical key is missing in a context that needs it.

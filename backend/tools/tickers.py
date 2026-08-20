@@ -98,12 +98,29 @@ def load_nse_symbols(refresh: bool = False) -> set[str]:
 # --------------------------------------------------------------------------
 # Resolution
 # --------------------------------------------------------------------------
-def resolve(symbol: str, verify: bool = True) -> str:
+def _listed_on(as_of: date) -> set[str]:
+    """NSE equity symbols that actually traded on `as_of`, from that day's bhavcopy."""
+    from backend.tools import market_data
+
+    return {s.split(".")[0].upper() for s in market_data.get_traded_universe(as_of)}
+
+
+def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
     """Normalise to a Yahoo NSE/BSE ticker, or raise UnsupportedMarketError.
 
-    verify=True checks NSE membership against the symbol master. Pass False only
-    for offline/unit-test paths where a network fetch is unwanted; the syntax
-    check alone cannot tell RELIANCE from AAPL.
+    verify=True checks NSE membership. Pass False only for offline/unit-test paths
+    where a network fetch is unwanted; the syntax check alone cannot tell RELIANCE
+    from AAPL.
+
+    `as_of` matters more than it looks. Without it, membership is checked against
+    TODAY's symbol master — which is survivorship bias inside the boundary itself.
+    TATAMOTORS traded every session up to its 2025 demerger and is absent from a
+    current bhavcopy, so a backtest dated mid-2025 would reject a ticker that was
+    perfectly valid on the day being tested, and would quietly drop exactly the
+    names whose fate the evaluation should include.
+
+    So when a caller knows the date it is reasoning about, it passes `as_of` and
+    membership is checked against that day's bhavcopy instead.
     """
     if not symbol or not symbol.strip():
         raise UnsupportedMarketError(f"Empty ticker. {_ERROR}")
@@ -125,6 +142,18 @@ def resolve(symbol: str, verify: bool = True) -> str:
     # Membership check applies to NSE only — BSE scrip codes are not in the
     # NSE bhavcopy, and there is no free BSE master in scope.
     if verify and suffix == ".NS":
+        if as_of is not None:
+            try:
+                listed = _listed_on(as_of)
+            except Exception:
+                listed = set()  # archive unavailable — fall through to the master
+            if listed:
+                if base in listed:
+                    return f"{base}{suffix}"
+                raise UnsupportedMarketError(
+                    f"'{base}' did not trade on NSE on {as_of}. {_ERROR}"
+                )
+
         master = load_nse_symbols()
         if master and base not in master:
             raise UnsupportedMarketError(
@@ -134,10 +163,10 @@ def resolve(symbol: str, verify: bool = True) -> str:
     return f"{base}{suffix}"
 
 
-def is_indian(symbol: str, verify: bool = True) -> bool:
+def is_indian(symbol: str, verify: bool = True, as_of: date | None = None) -> bool:
     """True if `symbol` resolves to an NSE/BSE ticker. Never raises."""
     try:
-        resolve(symbol, verify=verify)
+        resolve(symbol, verify=verify, as_of=as_of)
     except UnsupportedMarketError:
         return False
     return True

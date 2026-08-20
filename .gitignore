@@ -22,11 +22,20 @@ ENV/
 *.swp
 *.swo
 
-# Data
+# Data — caches and bulk downloads only.
+# NOTE: data/testset.json is deliberately NOT ignored. The frozen test set must be
+# committed (Phase 2, Task 2.8) or the evaluation is not reproducible.
 data/cache.db
 data/cache.db-journal
+data/cache.db-wal
+data/cache.db-shm
+# LangGraph run checkpoints — per-run scratch, regenerable
+data/graph_checkpoints.db
 data/*.parquet
-data/testset.json
+# NSE daily archive zips — bulk, regenerable
+data/bhavcopy/
+# NSE symbol master — regenerable
+data/nse_symbols.json
 
 # OS
 .DS_Store

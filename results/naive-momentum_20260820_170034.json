@@ -1,0 +1,66 @@
+{
+  "system": "naive-momentum",
+  "nonce": "",
+  "run_at": "2026-08-20T17:00:34",
+  "testset": "C:\\Users\\frien\\OneDrive\\Desktop\\BTP\\data\\testset.json",
+  "summary": {
+    "system": "naive-momentum",
+    "n_forecasts": 4,
+    "n_scoreable": 4,
+    "n_parse_failures": 0,
+    "directional_accuracy_pct": 25.0,
+    "nifty_relative_accuracy_pct": 50.0,
+    "mae_inr": 144.57,
+    "mape_pct": 5.169,
+    "target_hit_rate_pct": 50.0,
+    "brier_score": 0.255,
+    "mean_confidence_pct": 50.6514,
+    "overconfidence_gap_pts": 25.65,
+    "total_tokens": 0,
+    "mean_tokens_per_forecast": 0.0,
+    "mean_seconds_per_forecast": 0.1442,
+    "total_llm_calls": 0,
+    "mean_return_pct": 4.1245,
+    "mean_excess_return_pct": 0.7855,
+    "wall_seconds": 1.0,
+    "n_errors": 0
+  },
+  "reliability": [
+    {
+      "bucket": "0-20%",
+      "n": 0,
+      "mean_confidence": null,
+      "realised_accuracy": null,
+      "gap": null
+    },
+    {
+      "bucket": "20-40%",
+      "n": 0,
+      "mean_confidence": null,
+      "realised_accuracy": null,
+      "gap": null
+    },
+    {
+      "bucket": "40-60%",
+      "n": 4,
+      "mean_confidence": 50.7,
+      "realised_accuracy": 25.0,
+      "gap": -25.7
+    },
+    {
+      "bucket": "60-80%",
+      "n": 0,
+      "mean_confidence": null,
+      "realised_accuracy": null,
+      "gap": null
+    },
+    {
+      "bucket": "80-100%",
+      "n": 0,
+      "mean_confidence": null,
+      "realised_accuracy": null,
+      "gap": null
+    }
+  ],
+  "failures": []
+}

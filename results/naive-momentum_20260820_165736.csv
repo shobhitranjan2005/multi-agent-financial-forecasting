@@ -1,0 +1,5 @@
+ticker,as_of,system,predicted_direction,actual_direction,direction_correct,relative_correct,confidence_pct,target_low,target_high,actual_close,return_pct,benchmark_return_pct,excess_return_pct,abs_pct_error,brier,tokens,llm_calls,seconds,parse_failed,note
+AXISBANK.NS,2025-06-02,naive-momentum,up,down,False,False,50.929525078001106,1169.67,1241.33,1173.3,-1.767,3.339,-5.106,2.744,0.2594,0,0,0.224,False,
+BHARTIARTL.NS,2025-06-02,naive-momentum,up,up,True,True,50.31923085001282,1804.4,1915.64,2019.4,8.915,3.339,5.576,7.892,0.2468,0,0,0.169,False,
+MARUTI.NS,2025-06-02,naive-momentum,down,up,False,True,50.92704554615075,11807.37,12544.77,12442.0,1.237,3.339,-2.102,2.137,0.2594,0,0,0.134,False,
+RELIANCE.NS,2025-06-02,naive-momentum,down,up,False,False,50.429644840573495,1365.22,1450.04,1528.4,8.113,3.339,4.774,7.902,0.2543,0,0,0.137,False,

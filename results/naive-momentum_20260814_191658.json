@@ -1,0 +1,72 @@
+{
+  "system": "naive-momentum",
+  "nonce": "",
+  "run_at": "2026-08-14T19:16:58",
+  "testset": "C:\\Users\\frien\\OneDrive\\Desktop\\BTP\\data\\testset.json",
+  "summary": {
+    "system": "naive-momentum",
+    "n_forecasts": 19,
+    "n_scoreable": 19,
+    "n_parse_failures": 0,
+    "directional_accuracy_pct": 26.32,
+    "nifty_relative_accuracy_pct": 31.58,
+    "mae_inr": 107.9455,
+    "mape_pct": 6.7804,
+    "target_hit_rate_pct": 26.32,
+    "brier_score": 0.2659,
+    "mean_confidence_pct": 53.3936,
+    "overconfidence_gap_pts": 27.07,
+    "total_tokens": 0,
+    "mean_tokens_per_forecast": 0.0,
+    "mean_seconds_per_forecast": 0.7504,
+    "total_llm_calls": 0,
+    "mean_return_pct": 2.3294,
+    "mean_excess_return_pct": 0.8714,
+    "wall_seconds": 26.0,
+    "n_errors": 1
+  },
+  "reliability": [
+    {
+      "bucket": "0-20%",
+      "n": 0,
+      "mean_confidence": null,
+      "realised_accuracy": null,
+      "gap": null
+    },
+    {
+      "bucket": "20-40%",
+      "n": 0,
+      "mean_confidence": null,
+      "realised_accuracy": null,
+      "gap": null
+    },
+    {
+      "bucket": "40-60%",
+      "n": 17,
+      "mean_confidence": 52.5,
+      "realised_accuracy": 23.5,
+      "gap": -29.0
+    },
+    {
+      "bucket": "60-80%",
+      "n": 2,
+      "mean_confidence": 60.8,
+      "realised_accuracy": 50.0,
+      "gap": -10.8
+    },
+    {
+      "bucket": "80-100%",
+      "n": 0,
+      "mean_confidence": null,
+      "realised_accuracy": null,
+      "gap": null
+    }
+  ],
+  "failures": [
+    {
+      "ticker": "TATAMOTORS.NS",
+      "as_of": "2025-06-02",
+      "error": "UnsupportedMarketError: 'TATAMOTORS' is not listed on NSE. This system covers NSE/BSE-listed Indian equities only. Use a bare symbol (RELIANCE), an NSE symbol (RELIANCE.NS) or a BSE symbol (500325.BO)."
+    }
+  ]
+}
