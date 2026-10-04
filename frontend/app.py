@@ -44,6 +44,89 @@ st.set_page_config(
     layout="wide",
 )
 
+CUSTOM_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+html, body, [class*="css"]  {
+    font-family: 'Outfit', sans-serif !important;
+}
+
+/* Base background */
+.stApp {
+    background: radial-gradient(circle at 15% 50%, #0c1018 0%, #030407 100%) !important;
+    color: #e2e8f0;
+}
+
+/* Sidebar styling */
+[data-testid="stSidebar"] {
+    background-color: rgba(12, 16, 24, 0.6) !important;
+    backdrop-filter: blur(15px);
+    border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+/* Metric Cards */
+div[data-testid="metric-container"] {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0,0,0,0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+div[data-testid="metric-container"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px 0 rgba(0, 255, 128, 0.1);
+    border: 1px solid rgba(0, 255, 128, 0.2);
+}
+
+/* Bull/Bear Cards */
+.bull-card {
+    background: linear-gradient(135deg, rgba(15, 123, 62, 0.1) 0%, rgba(15, 123, 62, 0.02) 100%);
+    border-left: 4px solid #0F7B3E;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+.bear-card {
+    background: linear-gradient(135deg, rgba(179, 38, 30, 0.1) 0%, rgba(179, 38, 30, 0.02) 100%);
+    border-left: 4px solid #B3261E;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+/* Buttons */
+.stButton > button {
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+    border-radius: 8px !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3) !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Headers */
+h1, h2, h3, h4, h5 {
+    color: #f8fafc !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em;
+}
+
+h1 {
+    background: -webkit-linear-gradient(45deg, #10b981, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+</style>
+"""
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
 NAVY = "#1F3864"
 GREEN = "#0F7B3E"
 RED = "#B3261E"
@@ -126,7 +209,9 @@ def price_chart(rows: list[dict], ticker: str, indicators: dict):
     fig.update_layout(
         height=420, margin=dict(l=10, r=10, t=30, b=10),
         xaxis_rangeslider_visible=False,
-        yaxis_title="INR", template="plotly_white",
+        yaxis_title="INR", template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
         title=f"{ticker} — last 180 sessions to {df[date_col].iloc[-1]:%Y-%m-%d}",
     )
     return fig
@@ -333,17 +418,18 @@ if turns:
     for turn in turns:
         target = bull_col if turn["position"] == "bull" else bear_col
         with target:
-            st.markdown(
-                f"**Round {turn['round_number']} — "
-                f"{'🐂 Bull' if turn['position'] == 'bull' else '🐻 Bear'}** · "
-                f"target {format_inr(turn.get('target_inr'))} · "
-                f"confidence {turn.get('confidence', 0):.0%}"
-            )
+            card_class = "bull-card" if turn["position"] == "bull" else "bear-card"
+            emoji = "🐂 Bull" if turn['position'] == 'bull' else "🐻 Bear"
+            html = f"<div class='{card_class}'>"
+            html += f"<h4 style='margin-top:0'>Round {turn['round_number']} — {emoji}</h4>"
+            html += f"<p><strong>Target:</strong> {format_inr(turn.get('target_inr'))} &middot; <strong>Confidence:</strong> {turn.get('confidence', 0):.0%}</p>"
             if turn.get("rebuttal"):
-                st.caption(f"Rebuttal: {turn['rebuttal']}")
+                html += f"<p style='color:#a1a1aa; font-style:italic;'>Rebuttal: {turn['rebuttal']}</p>"
+            html += "<ul>"
             for point in turn.get("points", []):
-                st.write(f"• {point}")
-            st.markdown("")
+                html += f"<li>{point}</li>"
+            html += "</ul></div>"
+            st.markdown(html, unsafe_allow_html=True)
 elif run_debate:
     st.warning("The debate stage produced no parseable turns.")
 

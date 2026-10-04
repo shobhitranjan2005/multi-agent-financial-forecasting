@@ -116,12 +116,14 @@ def test_cors_is_an_explicit_allowlist_never_a_wildcard():
 def test_rate_limiter_trips(client):
     """The forecast limit is deliberately tight — those calls cost real quota."""
     from backend.api.main import FORECAST_LIMIT_REQUESTS, _hits
+    from unittest.mock import patch
 
     _hits.clear()
-    codes = [
-        client.post("/api/forecast/RELIANCE.NS", json={"as_of": "2025-06-02"}).status_code
-        for _ in range(FORECAST_LIMIT_REQUESTS + 2)
-    ]
+    with patch("backend.llm.is_configured", return_value=False):
+        codes = [
+            client.post("/api/forecast/RELIANCE.NS", json={"as_of": "2025-06-02"}).status_code
+            for _ in range(FORECAST_LIMIT_REQUESTS + 2)
+        ]
     assert 429 in codes, f"rate limiter never tripped: {codes}"
     _hits.clear()
 
