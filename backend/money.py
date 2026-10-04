@@ -11,6 +11,7 @@ in PLAIN INR UNITS. Convert here first.
 """
 from __future__ import annotations
 
+import math
 import re
 from typing import Optional
 
@@ -79,7 +80,7 @@ def format_inr(amount: float | int | None, *, decimals: int = 2) -> str:
     >>> format_inr(1234567.5)
     '₹12,34,567.50'
     """
-    if amount is None:
+    if amount is None or (isinstance(amount, float) and math.isnan(amount)):
         return "unavailable"
     neg = amount < 0
     amount = abs(float(amount))
@@ -111,7 +112,7 @@ def humanize_inr(amount: float | int | None) -> str:
     >>> humanize_inr(25_000_000_000)
     '₹2,500.00 crore'
     """
-    if amount is None:
+    if amount is None or (isinstance(amount, float) and math.isnan(amount)):
         return "unavailable"
     a = abs(float(amount))
     if a >= CRORE:

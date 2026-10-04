@@ -131,7 +131,7 @@ def _get_client():
 
 def _is_rate_limit(exc: Exception) -> bool:
     text = f"{type(exc).__name__}: {exc}".lower()
-    return any(s in text for s in ("429", "resource_exhausted", "quota", "rate limit"))
+    return any(s in text for s in ("429", "503", "resource_exhausted", "quota", "rate limit", "unavailable", "high demand"))
 
 
 @retry(
