@@ -76,7 +76,7 @@ python -m evaluate ablate --repeats 3
 
 # demo
 uvicorn backend.api.main:app --reload      # API + WebSocket agent stream
-streamlit run frontend/app.py              # dashboard
+cd web && npm install && npm run dev         # dashboard (API: uvicorn backend.api.main:app)
 python -m scripts.warm_demo                # verify the demo replays from cache
 ```
 

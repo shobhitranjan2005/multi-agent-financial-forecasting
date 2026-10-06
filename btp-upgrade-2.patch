@@ -1,0 +1,1177 @@
+diff --git a/README.md b/README.md
+index e011eae..d651516 100644
+--- a/README.md
++++ b/README.md
+@@ -76,7 +76,7 @@ python -m evaluate ablate --repeats 3
+ 
+ # demo
+ uvicorn backend.api.main:app --reload      # API + WebSocket agent stream
+-streamlit run frontend/app.py              # dashboard
++cd web && npm install && npm run dev         # dashboard (API: uvicorn backend.api.main:app)
+ python -m scripts.warm_demo                # verify the demo replays from cache
+ ```
+ 
+diff --git a/backend/eval/harness.py b/backend/eval/harness.py
+index caf0071..4940c26 100644
+--- a/backend/eval/harness.py
++++ b/backend/eval/harness.py
+@@ -16,7 +16,7 @@ from typing import Callable, Optional
+ 
+ from backend.agents.schemas import ForecastRecord
+ from backend.config import Config
+-from backend.eval import metrics, naive, outcomes, testset as testset_mod
++from backend.eval import metrics, naive, outcomes, provenance, testset as testset_mod
+ from backend.eval.metrics import Scored
+ 
+ RESULTS_DIR = Config.DATA_DIR.parent / "results"
+@@ -101,6 +101,8 @@ def run(
+     **forecaster_kwargs,
+ ) -> dict:
+     """Run `system` over the frozen test set and return scored results."""
++    if system not in naive.REGISTRY:
++        provenance.require_pinned_model()
+     cases = testset_mod.cases(testset_path)
+     if limit:
+         cases = cases[:limit]
+@@ -147,6 +149,7 @@ def run(
+         "nonce": nonce,
+         "run_at": datetime.now().isoformat(timespec="seconds"),
+         "testset": str(testset_path),
++        "provenance": provenance.collect(testset_path, system),
+         "summary": summary,
+         "reliability": metrics.reliability_table(scored),
+         "scored": scored,
+@@ -192,6 +195,7 @@ def write_results(result: dict, outdir: Path = RESULTS_DIR) -> dict[str, Path]:
+         "nonce": result["nonce"],
+         "run_at": result["run_at"],
+         "testset": result["testset"],
++        "provenance": result.get("provenance"),
+         "summary": result["summary"],
+         "reliability": result["reliability"],
+         "failures": result["failures"],
+diff --git a/backend/eval/preflight.py b/backend/eval/preflight.py
+new file mode 100644
+index 0000000..c0679b1
+--- /dev/null
++++ b/backend/eval/preflight.py
+@@ -0,0 +1,88 @@
++"""One-command pre-experiment gate.
++
++Answers, from real runs, the three questions that decide whether the frozen test
++set is usable BEFORE any LLM experiment is scored:
++  1. Is the model a pinned version?
++  2. Does the test window post-date the model's training cutoff (recall probe)?
++  3. Do the Sentiment / Fundamental agents actually receive evidence for the
++     test dates (or would their ablations be vacuous)?
++It never edits the test set and never scores anything. It reports; a human acts.
++"""
++from __future__ import annotations
++
++import json
++from datetime import date, datetime
++from pathlib import Path
++
++from backend.config import Config
++from backend.eval import provenance, recall_probe, testset as testset_mod
++
++RESULTS = Config.DATA_DIR.parent / "results"
++
++
++def non_null(x) -> int:
++    """Count non-null leaf values in any nested dict/list (shape-agnostic)."""
++    if isinstance(x, dict):
++        return sum(non_null(v) for v in x.values())
++    if isinstance(x, (list, tuple)):
++        return sum(non_null(v) for v in x)
++    return 0 if x is None or x == "" else 1
++
++
++def audit_case(ticker: str, as_of: date) -> dict:
++    from backend.context import build
++    try:
++        c = build(ticker, as_of, with_fundamentals=True, with_news=True, with_macro=True)
++    except Exception as exc:  # recorded, never hidden
++        return {"ticker": ticker, "as_of": str(as_of), "error": str(exc)}
++    heads = (c.news or {}).get("headlines") or []
++    return {"ticker": ticker, "as_of": str(as_of), "news_items": len(heads),
++            "fundamental_values": non_null(c.fundamentals), "macro_values": non_null(c.macro)}
++
++
++def verdict(probe: dict | None, audit: list[dict], case_dates: list[str], llm_results_exist: bool) -> list[str]:
++    out: list[str] = []
++    ok = [a for a in audit if "error" not in a]
++    if probe and probe.get("latest_recalled_date"):
++        cut = probe["latest_recalled_date"]
++        bad = sum(d <= cut for d in case_dates)
++        if bad:
++            out.append(f"CONTAMINATED: {bad}/{len(case_dates)} test cases have as_of <= {cut}, "
++                       f"a date the model recalled. Rebuild the test set from "
++                       f"{probe['recommended_testset_start']}. "
++                       + ("Re-freezing is still legitimate: no LLM results exist yet."
++                          if not llm_results_exist else
++                          "LLM results already exist -- a rebuild must be disclosed in the report."))
++    elif probe:
++        out.append("No recall detected in the probed window (a refusal is weaker evidence than a wrong answer; "
++                   "report probe counts, not just the boundary).")
++    if ok:
++        for key, label in (("news_items", "Sentiment (news)"), ("fundamental_values", "Fundamental")):
++            empty = sum(a[key] == 0 for a in ok) / len(ok)
++            if empty >= 0.5:
++                out.append(f"VACUOUS ABLATION RISK: {label} evidence is empty for {empty:.0%} of cases; "
++                           f"removing that specialist cannot change results by construction. "
++                           f"Report as a limitation or change the data source.")
++    if len(ok) < len(audit):
++        out.append(f"{len(audit) - len(ok)} case(s) failed the audit; see errors in the JSON.")
++    return out or ["No blocking issues found."]
++
++
++def run(start: date, end: date, step: int = 30, path: Path | None = None) -> dict:
++    provenance.require_pinned_model()          # stop early: probe is tied to the model ID
++    probe = recall_probe.sweep(start, end, step_days=step)
++    path = path or Config.DATA_DIR / "testset.json"
++    cases = testset_mod.cases(path)
++    audit = [audit_case(c.ticker, date.fromisoformat(str(c.as_of))) for c in cases]
++    llm_exist = any(not p.name.startswith("naive") for p in RESULTS.glob("*.json")
++                    if not p.name.startswith("preflight"))
++    report = {"run_at": datetime.now().isoformat(timespec="seconds"),
++              "provenance": provenance.collect(path, "preflight"),
++              "probe": {k: v for k, v in probe.items() if k != "probes"},
++              "probes": probe["probes"], "audit": audit,
++              "verdict": verdict(probe, audit, [str(c.as_of) for c in cases], llm_exist)}
++    RESULTS.mkdir(exist_ok=True)
++    out = RESULTS / f"preflight_{datetime.now():%Y%m%d_%H%M%S}.json"
++    out.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
++    report["path"] = str(out)
++    return report
+diff --git a/backend/eval/provenance.py b/backend/eval/provenance.py
+new file mode 100644
+index 0000000..4b8ea89
+--- /dev/null
++++ b/backend/eval/provenance.py
+@@ -0,0 +1,66 @@
++"""Run provenance: what exactly produced a result file.
++
++A result that cannot be tied to a test-set hash, a code revision and a model ID
++cannot be defended. Every harness run embeds this block in its JSON.
++"""
++from __future__ import annotations
++
++import hashlib
++import os
++import subprocess
++from importlib import metadata
++from pathlib import Path
++
++from backend.config import Config
++
++_PKGS = ("pandas", "numpy", "pydantic", "yfinance", "langgraph", "google-genai")
++
++
++class UnpinnedModelError(RuntimeError):
++    pass
++
++
++def require_pinned_model() -> None:
++    """Refuse LLM runs against a moving alias (e.g. gemini-flash-latest).
++
++    The LLM cache is keyed on the model string, so an alias that silently changes
++    would mix responses from different model versions inside one experiment.
++    Override only for demos: ALLOW_MODEL_ALIAS=1.
++    """
++    m = Config.GEMINI_MODEL
++    if m.endswith("-latest") and os.getenv("ALLOW_MODEL_ALIAS") != "1":
++        raise UnpinnedModelError(
++            f"GEMINI_MODEL={m!r} is a moving alias. Set GEMINI_MODEL in .env to an "
++            f"exact model ID from AI Studio before running experiments."
++        )
++
++
++def _sha256(path: Path) -> str | None:
++    return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
++
++
++def _git(*args: str) -> str | None:
++    try:
++        return subprocess.check_output(
++            ["git", *args], cwd=Config.DATA_DIR.parent, text=True, stderr=subprocess.DEVNULL
++        ).strip()
++    except Exception:
++        return None
++
++
++def _ver(pkg: str) -> str | None:
++    try:
++        return metadata.version(pkg)
++    except metadata.PackageNotFoundError:
++        return None
++
++
++def collect(testset_path: Path, system: str) -> dict:
++    return {
++        "testset_sha256": _sha256(Path(testset_path)),
++        "git_commit": _git("rev-parse", "HEAD"),
++        "git_dirty": bool(_git("status", "--porcelain")),
++        "model": None if system.startswith("naive") else Config.GEMINI_MODEL,
++        "horizon_sessions": Config.HORIZON_SESSIONS,
++        "packages": {p: _ver(p) for p in _PKGS},
++    }
+diff --git a/backend/eval/stats.py b/backend/eval/stats.py
+new file mode 100644
+index 0000000..4351966
+--- /dev/null
++++ b/backend/eval/stats.py
+@@ -0,0 +1,77 @@
++"""Inference for the headline comparison, clustered by as_of date.
++
++Cases that share an as_of date share a market regime, so they are NOT independent.
++Resampling individual cases would understate uncertainty. These routines resample
++whole DATES (a block bootstrap), which is the honest unit of independence here.
++Pure stdlib: no new dependencies.
++"""
++from __future__ import annotations
++
++import random
++from collections import defaultdict
++from math import comb
++from typing import Iterable, Mapping, Sequence
++
++Key = tuple[str, str]  # (ticker, as_of)
++
++
++def _by_date(values: Mapping[Key, float]) -> dict[str, list[float]]:
++    d: dict[str, list[float]] = defaultdict(list)
++    for (_, as_of), v in values.items():
++        d[as_of].append(float(v))
++    return d
++
++
++def _boot(groups: Sequence[Sequence[float]], n: int, seed: int) -> list[float]:
++    rng, k, out = random.Random(seed), len(groups), []
++    for _ in range(n):
++        picked = [groups[rng.randrange(k)] for _ in range(k)]
++        flat = [x for g in picked for x in g]
++        out.append(sum(flat) / len(flat))
++    return out
++
++
++def _ci(samples: list[float], alpha: float) -> tuple[float, float]:
++    s = sorted(samples)
++    return s[int((alpha / 2) * len(s))], s[min(len(s) - 1, int((1 - alpha / 2) * len(s)))]
++
++
++def mean_ci(values: Mapping[Key, float], *, n: int = 10_000, seed: int = 0, alpha: float = 0.05) -> dict:
++    """Mean of a per-case metric with a date-block bootstrap CI."""
++    g = list(_by_date(values).values())
++    if len(g) < 2:
++        raise ValueError("need >= 2 distinct as_of dates for a clustered CI")
++    flat = [x for grp in g for x in grp]
++    lo, hi = _ci(_boot(g, n, seed), alpha)
++    return {"mean": sum(flat) / len(flat), "ci_low": lo, "ci_high": hi,
++            "n_cases": len(flat), "n_dates": len(g)}
++
++
++def paired_diff_ci(a: Mapping[Key, float], b: Mapping[Key, float], *,
++                   n: int = 10_000, seed: int = 0, alpha: float = 0.05) -> dict:
++    """mean(a - b) over cases both systems scored, date-block bootstrap.
++
++    If the interval contains 0, the data do not support a difference.
++    """
++    keys = sorted(set(a) & set(b))
++    diff = {k: float(a[k]) - float(b[k]) for k in keys}
++    r = mean_ci(diff, n=n, seed=seed, alpha=alpha)
++    r["excludes_zero"] = r["ci_low"] > 0 or r["ci_high"] < 0
++    return r
++
++
++def mcnemar_exact(a_correct: Iterable[bool], b_correct: Iterable[bool]) -> dict:
++    """Exact two-sided McNemar on paired correct/incorrect calls.
++
++    Treats cases as independent, so it is OPTIMISTIC under date clustering. Report
++    it beside paired_diff_ci, never instead of it.
++    """
++    a_only = b_only = 0
++    for x, y in zip(a_correct, b_correct):
++        a_only += bool(x) and not y
++        b_only += bool(y) and not x
++    m = a_only + b_only
++    if m == 0:
++        return {"a_only": 0, "b_only": 0, "p_value": 1.0}
++    tail = sum(comb(m, i) for i in range(min(a_only, b_only) + 1)) / 2**m
++    return {"a_only": a_only, "b_only": b_only, "p_value": min(1.0, 2 * tail)}
+diff --git a/backend/tools/tickers.py b/backend/tools/tickers.py
+index c3bf5aa..bf2841b 100644
+--- a/backend/tools/tickers.py
++++ b/backend/tools/tickers.py
+@@ -126,6 +126,7 @@ def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
+         raise UnsupportedMarketError(f"Empty ticker. {_ERROR}")
+ 
+     raw = symbol.strip().upper()
++    inferred_suffix = False
+ 
+     if "." in raw:
+         base, _, suffix = raw.rpartition(".")
+@@ -135,6 +136,7 @@ def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
+             raise UnsupportedMarketError(f"Unsupported exchange suffix '{suffix}'.{hint} {_ERROR}")
+     else:
+         base, suffix = raw, Config.DEFAULT_SUFFIX
++        inferred_suffix = True
+ 
+     if not _SYMBOL_RE.match(base):
+         raise UnsupportedMarketError(f"'{symbol}' is not a valid NSE/BSE symbol. {_ERROR}")
+@@ -142,6 +144,7 @@ def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
+     # Membership check applies to NSE only — BSE scrip codes are not in the
+     # NSE bhavcopy, and there is no free BSE master in scope.
+     if verify and suffix == ".NS":
++        listed: set = set()
+         if as_of is not None:
+             try:
+                 listed = _listed_on(as_of)
+@@ -155,9 +158,18 @@ def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
+                 )
+ 
+         master = load_nse_symbols()
+-        if master and base not in master:
++        if master:
++            if base not in master:
++                raise UnsupportedMarketError(
++                    f"'{base}' is not listed on NSE. {_ERROR}"
++                )
++        elif inferred_suffix:
++            # FAIL CLOSED: with no membership source available, a bare symbol
++            # ("AAPL") must not be silently promoted to "AAPL.NS". Write the
++            # suffix explicitly (RELIANCE.NS) to assert it is an NSE ticker.
+             raise UnsupportedMarketError(
+-                f"'{base}' is not listed on NSE. {_ERROR}"
++                f"Cannot verify '{base}' as an NSE symbol (symbol master unavailable). "
++                f"Write it with its suffix, e.g. '{base}.NS'. {_ERROR}"
+             )
+ 
+     return f"{base}{suffix}"
+diff --git a/evaluate.py b/evaluate.py
+index 5e690b9..c9437e8 100644
+--- a/evaluate.py
++++ b/evaluate.py
+@@ -160,6 +160,24 @@ def cmd_ablate(args) -> int:
+     return 0
+ 
+ 
++def cmd_preflight(args) -> int:
++    from backend import llm
++    from backend.eval import preflight
++    if not llm.is_configured():
++        print("\n  GEMINI_API_KEY not set in .env\n", file=sys.stderr)
++        return 3
++    try:
++        rep = preflight.run(_d(args.start), _d(args.end), step=args.step)
++    except preflight.provenance.UnpinnedModelError as exc:
++        print(f"\n  {exc}\n", file=sys.stderr)
++        return 4
++    print("\n  PREFLIGHT VERDICT")
++    for line in rep["verdict"]:
++        print(f"   - {line}")
++    print(f"\n  Full report: {rep['path']}\n  Paste that file's 'verdict' and 'probe' blocks back for analysis.\n")
++    return 0
++
++
+ def main(argv: list[str] | None = None) -> int:
+     ap = argparse.ArgumentParser(prog="evaluate", description="Leakage-free evaluation harness.")
+     sub = ap.add_subparsers(dest="cmd", required=True)
+@@ -202,6 +220,12 @@ def main(argv: list[str] | None = None) -> int:
+     c.add_argument("--nonce", default="")
+     c.set_defaults(func=cmd_compare)
+ 
++    pf = sub.add_parser("preflight", help="gate: pinned model, recall cutoff, data availability")
++    pf.add_argument("--start", default="2024-01-01")
++    pf.add_argument("--end", default="2026-09-01")
++    pf.add_argument("--step", type=int, default=30)
++    pf.set_defaults(func=cmd_preflight)
++
+     args = ap.parse_args(argv)
+     enable_utf8_console()
+     return args.func(args)
+diff --git a/tests/test_preflight.py b/tests/test_preflight.py
+new file mode 100644
+index 0000000..e61f359
+--- /dev/null
++++ b/tests/test_preflight.py
+@@ -0,0 +1,25 @@
++"""Verdict logic on SYNTHETIC inputs (checks the rules, not any result)."""
++from backend.eval import preflight as pf
++
++PROBE = {"latest_recalled_date": "2025-08-01", "recommended_testset_start": "2025-08-31"}
++
++
++def test_contamination_flagged_and_rebuild_allowed_before_llm_results():
++    v = pf.verdict(PROBE, [], ["2025-06-02", "2025-09-12"], llm_results_exist=False)
++    assert "CONTAMINATED: 1/2" in v[0] and "legitimate" in v[0]
++
++
++def test_rebuild_after_llm_results_requires_disclosure():
++    v = pf.verdict(PROBE, [], ["2025-06-02"], llm_results_exist=True)
++    assert "disclosed" in v[0]
++
++
++def test_vacuous_ablation_detected():
++    audit = [{"news_items": 0, "fundamental_values": 5}] * 4
++    v = pf.verdict({"latest_recalled_date": None}, audit, ["2026-01-05"], False)
++    assert any("Sentiment" in x and "VACUOUS" in x for x in v)
++    assert not any("Fundamental evidence" in x for x in v)
++
++
++def test_non_null_counts_nested_leaves():
++    assert pf.non_null({"a": 1, "b": [None, 2, {"c": ""}], "d": None}) == 2
+diff --git a/tests/test_stats.py b/tests/test_stats.py
+new file mode 100644
+index 0000000..f59882c
+--- /dev/null
++++ b/tests/test_stats.py
+@@ -0,0 +1,40 @@
++"""Unit tests on SYNTHETIC data only -- these check the maths, not any result."""
++import pytest
++from backend.eval import stats, provenance
++
++
++def _cases(vals_by_date):
++    return {(f"T{i}", d): v for d, vs in vals_by_date.items() for i, v in enumerate(vs)}
++
++
++def test_ci_brackets_mean_and_is_wider_than_naive_for_clustered_data():
++    data = _cases({"d1": [1, 1, 1, 1], "d2": [0, 0, 0, 0], "d3": [1, 1, 1, 1], "d4": [0, 0, 0, 0]})
++    r = stats.mean_ci(data, seed=1)
++    assert r["mean"] == 0.5 and r["n_dates"] == 4
++    assert r["ci_low"] < 0.5 < r["ci_high"]
++    assert r["ci_high"] - r["ci_low"] > 0.4   # 16 cases but ~4 independent dates
++
++
++def test_paired_diff_excludes_zero_only_for_a_consistent_gap():
++    a = _cases({f"d{i}": [1, 1] for i in range(8)})
++    b = _cases({f"d{i}": [0, 0] for i in range(8)})
++    assert stats.paired_diff_ci(a, b, seed=2)["excludes_zero"]
++    assert not stats.paired_diff_ci(a, a, seed=2)["excludes_zero"]
++
++
++def test_mcnemar_exact_known_value():
++    r = stats.mcnemar_exact([True] * 8 + [False] * 2, [False] * 8 + [True] * 2)
++    assert (r["a_only"], r["b_only"]) == (8, 2)
++    assert r["p_value"] == pytest.approx(0.109375)   # 2 * P(X<=2 | n=10, p=.5)
++
++
++def test_single_date_is_rejected():
++    with pytest.raises(ValueError):
++        stats.mean_ci(_cases({"d1": [1, 0, 1]}))
++
++
++def test_moving_alias_is_refused(monkeypatch):
++    monkeypatch.setattr(provenance.Config, "GEMINI_MODEL", "gemini-flash-latest")
++    monkeypatch.delenv("ALLOW_MODEL_ALIAS", raising=False)
++    with pytest.raises(provenance.UnpinnedModelError):
++        provenance.require_pinned_model()
+diff --git a/tests/test_tickers_failclosed.py b/tests/test_tickers_failclosed.py
+new file mode 100644
+index 0000000..20bdc5a
+--- /dev/null
++++ b/tests/test_tickers_failclosed.py
+@@ -0,0 +1,24 @@
++"""India-only boundary must not depend on network state."""
++import pytest
++from backend.tools import tickers
++
++
++@pytest.fixture
++def offline(monkeypatch):
++    monkeypatch.setattr(tickers, "load_nse_symbols", lambda *a, **k: set())
++    monkeypatch.setattr(tickers, "_listed_on", lambda *a, **k: set())
++
++
++def test_bare_foreign_symbol_rejected_when_master_unavailable(offline):
++    with pytest.raises(tickers.UnsupportedMarketError):
++        tickers.resolve("AAPL")
++
++
++def test_explicit_suffix_still_accepted_offline(offline):
++    assert tickers.resolve("RELIANCE.NS") == "RELIANCE.NS"
++
++
++def test_foreign_suffix_always_rejected(offline):
++    for s in ("BP.L", "AAPL.US", "7203.T", "SAP.DE"):
++        with pytest.raises(tickers.UnsupportedMarketError):
++            tickers.resolve(s)
+diff --git a/web/src/App.jsx b/web/src/App.jsx
+index 52b682a..d074b84 100644
+--- a/web/src/App.jsx
++++ b/web/src/App.jsx
+@@ -1,207 +1,122 @@
+ import React, { useState } from 'react';
+ import Plot from 'react-plotly.js';
+-import { Settings, Play, Activity, AlertCircle, ArrowRight } from 'lucide-react';
++import { Sparkles, Play, ShieldCheck, TrendingUp, Loader2 } from 'lucide-react';
+ import { useMarketData } from './hooks/useMarketData';
+ import { useForecastStream } from './hooks/useForecastStream';
+ import './index.css';
+ 
+-function App() {
++const PRESETS = ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'SBIN.NS', 'MARUTI.NS'];
++const inr = (v) => (v == null || isNaN(v) ? '—' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(v));
++const dark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches;
++
++export default function App() {
+   const [ticker, setTicker] = useState('RELIANCE.NS');
+   const [asOf, setAsOf] = useState('2025-06-02');
+-  const [debateEnabled, setDebateEnabled] = useState(true);
+-
+-  const { data, loading, error: dataError } = useMarketData(ticker, asOf);
+-  const { isRunning, progress, logs, debate, forecast, error: streamError, startForecast } = useForecastStream();
+-
+-  const handleRun = () => {
+-    startForecast(ticker, asOf, debateEnabled, []);
+-  };
+-
+-  const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(val);
+-
+-  const renderChart = () => {
+-    if (!data?.price?.candles) return null;
+-    const candles = data.price.candles;
+-    const x = candles.map(c => c.date);
+-    const close = candles.map(c => c.close);
+-    const high = candles.map(c => c.high);
+-    const low = candles.map(c => c.low);
+-    const open = candles.map(c => c.open);
+-
+-    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+-    const gridColor = isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+-    const textColor = isDarkMode ? '#fafafa' : '#18181b';
+-
+-    return (
+-      <div className="panel" style={{ padding: '24px' }}>
+-        <h3 style={{ marginBottom: '16px', fontSize: '1.1rem', fontWeight: 600 }}>Market Trajectory</h3>
+-        <Plot
+-          data={[
+-            {
+-              x, close, decreasing: {line: {color: '#ef4444'}}, high, increasing: {line: {color: '#10b981'}},
+-              line: {color: 'rgba(31,119,180,1)'}, low, open, type: 'candlestick', xaxis: 'x', yaxis: 'y'
+-            }
+-          ]}
+-          layout={{
+-            paper_bgcolor: 'rgba(0,0,0,0)',
+-            plot_bgcolor: 'rgba(0,0,0,0)',
+-            font: { color: textColor, family: 'Inter' },
+-            margin: { t: 10, l: 40, r: 10, b: 30 },
+-            xaxis: { rangeslider: { visible: false }, gridcolor: gridColor },
+-            yaxis: { gridcolor: gridColor },
+-            height: 350
+-          }}
+-          useResizeHandler={true}
+-          style={{ width: "100%", height: "100%" }}
+-        />
+-      </div>
+-    );
+-  };
++  const [debateOn, setDebateOn] = useState(true);
++  const { data, loading, error: dataErr } = useMarketData(ticker, asOf);
++  const { isRunning, progress, logs, debate, forecast, error: streamErr, startForecast } = useForecastStream();
++  const ev = data?.evidence;
++  const candles = data?.price?.candles;
++  const total = debateOn ? 7 : 6;
++  const done = Math.round((progress / 100) * total);
++  const fg = dark() ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
++  const sig = forecast?.signal?.toLowerCase();
+ 
+   return (
+-    <div id="root">
+-      <aside className="sidebar">
+-        <h1>
+-          <div style={{ width: 24, height: 24, borderRadius: 6, background: 'var(--text-main)' }}></div>
+-          Forecaster
+-        </h1>
+-        
+-        <div className="sidebar-section" style={{ marginTop: '24px' }}>
+-          <h3>Configuration</h3>
+-          
+-          <div className="input-group">
+-            <label>NSE Symbol</label>
+-            <input type="text" className="input-control" value={ticker} onChange={(e) => setTicker(e.target.value)} />
+-          </div>
++    <div className="app">
++      <aside className="side">
++        <div className="brand"><div className="logo"><Sparkles size={18} /></div>Forecaster</div>
++        <div className="tag">Multi-agent equity research · NSE / BSE</div>
+ 
+-          <div className="input-group">
+-            <label>Cutoff Date</label>
+-            <input type="date" className="input-control" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
+-          </div>
++        <label>Ticker</label>
++        <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} />
++        <div className="chips">{PRESETS.map((p) => <button key={p} className="chip" onClick={() => setTicker(p)}>{p.replace('.NS', '')}</button>)}</div>
+ 
+-          <div className="input-group" style={{ marginTop: '8px' }}>
+-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+-              <input type="checkbox" checked={debateEnabled} onChange={(e) => setDebateEnabled(e.target.checked)} />
+-              Enable Adversarial Debate
+-            </label>
+-          </div>
+-        </div>
++        <label>As-of date</label>
++        <input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
+ 
+-        <div style={{ flex: 1 }}></div>
++        <div className="switch" onClick={() => setDebateOn(!debateOn)}>
++          <div>Bull–Bear debate<small>Turn off for the ablation</small></div>
++          <div className={`tog ${debateOn ? 'on' : ''}`} />
++        </div>
+ 
+-        <button className="btn-primary" onClick={handleRun} disabled={isRunning || loading}>
+-          {isRunning ? 'Processing...' : 'Run Forecast'} <ArrowRight size={16} />
++        <button className="run" disabled={isRunning} onClick={() => startForecast(ticker, asOf, debateOn, [])}>
++          {isRunning ? <><Loader2 size={17} className="spin" /> Analysing…</> : <><Play size={16} /> Run forecast</>}
+         </button>
++        <div className="note"><ShieldCheck size={13} style={{ verticalAlign: -2 }} /> Every data source is capped at the as-of date in code, not in the prompt. Live forecasts are demonstrations; research claims come only from the evaluation harness.</div>
+       </aside>
+ 
+-      <main className="dashboard-main">
+-        <div className="dashboard-header">
+-          <h2>Overview: {ticker}</h2>
+-          <p>Analyzing market data up to {asOf}</p>
++      <main>
++        <div className="head">
++          <div><h2>{ticker}</h2><span>Evidence as of {asOf}</span></div>
++          <span className="badge"><ShieldCheck size={14} /> No data after {asOf}</span>
+         </div>
+ 
+-        {dataError && <div style={{ color: 'var(--danger)', padding: 16, background: 'var(--danger-bg)', borderRadius: 8 }}>{dataError}</div>}
+-        {streamError && <div style={{ color: 'var(--danger)', padding: 16, background: 'var(--danger-bg)', borderRadius: 8 }}>{streamError}</div>}
++        {(dataErr || streamErr) && <div className="err">{dataErr || streamErr}</div>}
+ 
+-        {data && (
+-          <div className="metric-grid">
+-            <div className="panel metric-card">
+-              <span className="metric-label">Last Close</span>
+-              <span className="metric-value">{formatCurrency(data.evidence.last_close)}</span>
+-            </div>
+-            <div className="panel metric-card">
+-              <span className="metric-label">RSI (14)</span>
+-              <span className="metric-value">{data.evidence.indicators?.rsi_14?.value || 'N/A'}</span>
+-            </div>
+-            <div className="panel metric-card">
+-              <span className="metric-label">MACD Bias</span>
+-              <span className="metric-value">{data.evidence.indicators?.macd?.bias || 'N/A'}</span>
+-            </div>
+-            <div className="panel metric-card">
+-              <span className="metric-label">NIFTY 50 (21d)</span>
+-              <span className="metric-value">{data.evidence.benchmark?.return_21d_pct || 'N/A'}%</span>
+-            </div>
++        {ev && (
++          <div className="kpis">
++            <div className="kpi"><small>Last close</small><b>{inr(ev.last_close)}</b></div>
++            <div className="kpi"><small>RSI (14)</small><b>{ev.indicators?.rsi_14?.value ?? 'N/A'}</b></div>
++            <div className="kpi"><small>MACD bias</small><b style={{ textTransform: 'capitalize' }}>{ev.indicators?.macd?.bias ?? 'N/A'}</b></div>
++            <div className="kpi"><small>21d vs NIFTY</small><b>{ev.benchmark?.return_21d_pct ?? 'N/A'}%</b></div>
+           </div>
+         )}
+ 
+-        {renderChart()}
++        {candles && (
++          <div className="card">
++            <h3><TrendingUp size={13} style={{ verticalAlign: -2 }} /> Price history</h3>
++            <Plot
++              data={[{ type: 'candlestick', x: candles.map((c) => c.date), open: candles.map((c) => c.open), high: candles.map((c) => c.high), low: candles.map((c) => c.low), close: candles.map((c) => c.close), increasing: { line: { color: '#10b981' } }, decreasing: { line: { color: '#ef4444' } } }]}
++              layout={{ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { color: dark() ? '#e8ecf7' : '#0f172a', family: 'Inter' }, margin: { t: 6, l: 46, r: 8, b: 28 }, height: 330, xaxis: { rangeslider: { visible: false }, gridcolor: fg }, yaxis: { gridcolor: fg } }}
++              config={{ displayModeBar: false, responsive: true }} useResizeHandler style={{ width: '100%' }} />
++          </div>
++        )}
++        {loading && !data && <div className="empty">Loading evidence…</div>}
+ 
+-        <div className="two-col-grid">
+-          <div className="panel" style={{ padding: '24px' }}>
+-            <h3 style={{ marginBottom: '16px', fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+-              <Activity size={18} className={isRunning ? 'running-icon' : ''} /> Pipeline Activity
+-            </h3>
+-            <div className="progress-bar-container">
+-              <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+-            </div>
+-            <div className="log-container">
+-              {logs.length === 0 && <span>Ready.</span>}
+-              {logs.map((log, i) => (
+-                <div key={i} className={`log-item ${log.includes('[DONE]') ? 'done' : 'running'}`}>
+-                  {log.replace('[DONE] ', '').replace('[RUNNING] ', '')}
+-                </div>
+-              ))}
+-            </div>
++        {(isRunning || logs.length > 0) && (
++          <div className="card">
++            <h3>Agent pipeline</h3>
++            <div className="steps">{Array.from({ length: total }).map((_, i) => <div key={i} className={`step ${i < done ? 'on' : ''}`} />)}</div>
++            <div className="log">{logs.map((l, i) => <div key={i} className={l.startsWith('[DONE]') ? 'd' : ''}>{l}</div>)}</div>
+           </div>
++        )}
+ 
+-          <div className="panel" style={{ padding: '24px' }}>
+-            <h3 style={{ marginBottom: '16px', fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+-              <AlertCircle size={18} /> Context Highlights
+-            </h3>
+-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+-              {data?.evidence?.news?.headlines?.length > 0 ? (
+-                data.evidence.news.headlines.slice(0, 4).map((h, i) => (
+-                  <div key={i} style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+-                    <strong style={{ color: 'var(--text-main)', marginRight: '6px' }}>{h.date}</strong>
+-                    {h.title}
+-                  </div>
+-                ))
+-              ) : (
+-                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>No recent news found before cutoff.</span>
+-              )}
++        {forecast && (
++          <div className="result">
++            <div className={`sig ${sig}`}>
++              <div className="w">{forecast.signal}</div>
++              <div className="rng">{inr(forecast.target_low_inr)} – {inr(forecast.target_high_inr)}</div>
++              <div className="conf"><i style={{ width: `${forecast.confidence_pct ?? 0}%` }} /></div>
++              <small>Confidence {forecast.confidence_pct ?? '—'}% · expects {forecast.expected_direction}</small>
++            </div>
++            <div className="card">
++              <h3>Reasoning</h3>
++              <p className="reason">{forecast.reasoning}</p>
++              {forecast.key_risks?.length > 0 && <div className="risks">{forecast.key_risks.map((r, i) => <span key={i} className="risk">{typeof r === 'string' ? r : JSON.stringify(r)}</span>)}</div>}
+             </div>
+           </div>
+-        </div>
++        )}
+ 
+-        {debate && (
+-          <div>
+-            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '20px' }}>Debate Analysis</h3>
+-            <div className="two-col-grid">
+-              {debate.map((turn, i) => (
+-                <div key={i} className={`panel debate-card ${turn.position}`}>
+-                  <h4>Round {turn.round_number}: {turn.position === 'bull' ? 'Bull' : 'Bear'}</h4>
+-                  <p style={{ fontWeight: 500 }}>Target: {formatCurrency(turn.target_inr)} &middot; Confidence: {(turn.confidence * 100).toFixed(0)}%</p>
+-                  {turn.rebuttal && <p style={{ fontStyle: 'italic', color: 'var(--text-muted)', marginTop: 8 }}>"{turn.rebuttal}"</p>}
+-                  <ul style={{ paddingLeft: '20px', marginTop: '12px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+-                    {turn.points.map((p, idx) => <li key={idx} style={{ marginBottom: '6px' }}>{p}</li>)}
+-                  </ul>
++        {debate?.length > 0 && (
++          <div className="card">
++            <h3>Bull vs Bear debate</h3>
++            <div className="debate">
++              {debate.map((t, i) => (
++                <div key={i} className={`turn ${t.position}`}>
++                  <h4>Round {t.round_number} · {t.position === 'bull' ? '🐂 Bull' : '🐻 Bear'}</h4>
++                  <ul>{t.points?.map((p, j) => <li key={j}>{p}</li>)}</ul>
+                 </div>
+               ))}
+             </div>
+           </div>
+         )}
+ 
+-        {forecast && (
+-          <div className="panel forecast-result">
+-            <p style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em' }}>
+-              Final System Output
+-            </p>
+-            <div className={`forecast-signal ${forecast.signal.toLowerCase()}`}>
+-              {forecast.signal}
+-            </div>
+-            <div className="forecast-target">
+-              Target Range: {formatCurrency(forecast.target_low_inr)} &mdash; {formatCurrency(forecast.target_high_inr)}
+-            </div>
+-            
+-            <div style={{ marginTop: '24px', background: 'var(--bg-sidebar)', padding: '24px', borderRadius: 'var(--radius-md)' }}>
+-              <h4 style={{ marginBottom: '12px', fontSize: '1rem' }}>Rationale</h4>
+-              <p style={{ lineHeight: 1.6, color: 'var(--text-muted)', fontSize: '0.95rem' }}>{forecast.reasoning}</p>
+-            </div>
+-          </div>
++        {ev?.news?.headlines?.length > 0 && (
++          <div className="card news"><h3>Headlines up to {asOf}</h3>{ev.news.headlines.slice(0, 5).map((h, i) => <div key={i}>{h.title || h}</div>)}</div>
+         )}
++        {!forecast && !isRunning && !candles && !loading && <div className="empty">Pick a ticker and date, then run a forecast.</div>}
+       </main>
+     </div>
+   );
+ }
+-
+-export default App;
+diff --git a/web/src/index.css b/web/src/index.css
+index df20ec7..658dcf1 100644
+--- a/web/src/index.css
++++ b/web/src/index.css
+@@ -1,323 +1,57 @@
+-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+-
+-:root {
+-  --bg-base: #fafafa;
+-  --bg-surface: #ffffff;
+-  --bg-sidebar: #f4f4f5;
+-  --border-light: #e4e4e7;
+-  --accent-primary: #18181b; /* Zinc 900 */
+-  --accent-hover: #27272a;
+-  --text-main: #18181b;
+-  --text-muted: #71717a;
+-  --success: #10b981;
+-  --danger: #ef4444;
+-  --success-bg: #d1fae5;
+-  --danger-bg: #fee2e2;
+-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+-  --radius-md: 10px;
+-  --radius-lg: 16px;
+-}
+-
+-@media (prefers-color-scheme: dark) {
+-  :root {
+-    --bg-base: #09090b; /* Zinc 950 */
+-    --bg-surface: #18181b; /* Zinc 900 */
+-    --bg-sidebar: #09090b;
+-    --border-light: #27272a; /* Zinc 800 */
+-    --accent-primary: #ffffff;
+-    --accent-hover: #f4f4f5;
+-    --text-main: #fafafa; /* Zinc 50 */
+-    --text-muted: #a1a1aa; /* Zinc 400 */
+-    --success-bg: rgba(16, 185, 129, 0.15);
+-    --danger-bg: rgba(239, 68, 68, 0.15);
+-  }
+-}
+-
+-* {
+-  box-sizing: border-box;
+-  margin: 0;
+-  padding: 0;
+-}
+-
+-body {
+-  font-family: 'Inter', -apple-system, sans-serif;
+-  background-color: var(--bg-base);
+-  color: var(--text-main);
+-  min-height: 100vh;
+-  -webkit-font-smoothing: antialiased;
+-}
+-
+-#root {
+-  display: flex;
+-  min-height: 100vh;
+-}
+-
+-/* Panel Utilities */
+-.panel {
+-  background: var(--bg-surface);
+-  border: 1px solid var(--border-light);
+-  border-radius: var(--radius-lg);
+-  box-shadow: var(--shadow-sm);
+-}
+-
+-/* Sidebar */
+-.sidebar {
+-  width: 320px;
+-  min-height: 100vh;
+-  padding: 32px 24px;
+-  border-right: 1px solid var(--border-light);
+-  background: var(--bg-sidebar);
+-  display: flex;
+-  flex-direction: column;
+-  gap: 32px;
+-}
+-
+-.sidebar h1 {
+-  font-size: 1.25rem;
+-  font-weight: 600;
+-  letter-spacing: -0.02em;
+-  color: var(--text-main);
+-  display: flex;
+-  align-items: center;
+-  gap: 8px;
+-}
+-
+-.sidebar-section {
+-  display: flex;
+-  flex-direction: column;
+-  gap: 16px;
+-}
+-
+-.sidebar-section h3 {
+-  font-size: 0.8rem;
+-  text-transform: uppercase;
+-  color: var(--text-muted);
+-  letter-spacing: 0.05em;
+-  font-weight: 600;
+-}
+-
+-/* Inputs & Controls */
+-.input-group {
+-  display: flex;
+-  flex-direction: column;
+-  gap: 6px;
+-}
+-
+-.input-group label {
+-  font-size: 0.875rem;
+-  color: var(--text-main);
+-  font-weight: 500;
+-}
+-
+-.input-control {
+-  background: var(--bg-surface);
+-  border: 1px solid var(--border-light);
+-  padding: 10px 14px;
+-  border-radius: 8px;
+-  color: var(--text-main);
+-  font-size: 0.95rem;
+-  font-family: 'Inter', sans-serif;
+-  outline: none;
+-  transition: all 0.2s ease;
+-  box-shadow: var(--shadow-sm);
+-}
+-
+-.input-control:focus {
+-  border-color: var(--text-main);
+-  box-shadow: 0 0 0 1px var(--text-main);
+-}
+-
+-/* Buttons */
+-.btn-primary {
+-  background: var(--accent-primary);
+-  color: var(--bg-base);
+-  border: none;
+-  padding: 12px 16px;
+-  border-radius: 8px;
+-  font-size: 0.95rem;
+-  font-weight: 500;
+-  cursor: pointer;
+-  transition: background-color 0.2s ease;
+-  display: flex;
+-  align-items: center;
+-  justify-content: center;
+-  gap: 8px;
+-  box-shadow: var(--shadow-sm);
+-}
+-
+-.btn-primary:hover:not(:disabled) {
+-  background: var(--accent-hover);
+-}
+-
+-.btn-primary:disabled {
+-  opacity: 0.5;
+-  cursor: not-allowed;
+-}
+-
+-/* Main Dashboard Area */
+-.dashboard-main {
+-  flex: 1;
+-  padding: 40px 48px;
+-  display: flex;
+-  flex-direction: column;
+-  gap: 32px;
+-  overflow-y: auto;
+-  max-width: 1400px;
+-  margin: 0 auto;
+-  width: 100%;
+-}
+-
+-.dashboard-header h2 {
+-  font-size: 1.5rem;
+-  font-weight: 600;
+-  letter-spacing: -0.02em;
+-}
+-
+-.dashboard-header p {
+-  color: var(--text-muted);
+-  font-size: 0.95rem;
+-  margin-top: 4px;
+-}
+-
+-/* Metric Grid */
+-.metric-grid {
+-  display: grid;
+-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+-  gap: 20px;
+-}
+-
+-.metric-card {
+-  padding: 24px;
+-  display: flex;
+-  flex-direction: column;
+-  gap: 4px;
+-}
+-
+-.metric-label {
+-  font-size: 0.85rem;
+-  color: var(--text-muted);
+-  font-weight: 500;
+-}
+-
+-.metric-value {
+-  font-size: 1.8rem;
+-  font-weight: 600;
+-  color: var(--text-main);
+-  letter-spacing: -0.02em;
+-}
+-
+-/* Status dots */
+-.status-indicator {
+-  display: inline-block;
+-  width: 10px;
+-  height: 10px;
+-  border-radius: 50%;
+-  margin-right: 8px;
+-}
+-.status-indicator.red { background-color: var(--danger); }
+-.status-indicator.green { background-color: var(--success); }
+-
+-/* Grid Layouts for lower sections */
+-.two-col-grid {
+-  display: grid;
+-  grid-template-columns: 1fr 1fr;
+-  gap: 24px;
+-}
+-
+-/* Brain / Logs */
+-.log-container {
+-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+-  font-size: 0.85rem;
+-  color: var(--text-muted);
+-  background: var(--bg-sidebar);
+-  padding: 16px;
+-  border-radius: var(--radius-md);
+-  border: 1px solid var(--border-light);
+-  max-height: 250px;
+-  overflow-y: auto;
+-  display: flex;
+-  flex-direction: column;
+-  gap: 6px;
+-}
+-
+-.log-item {
+-  display: flex;
+-  align-items: center;
+-  gap: 8px;
+-}
+-.log-item::before {
+-  content: '';
+-  width: 6px;
+-  height: 6px;
+-  border-radius: 50%;
+-  background: var(--border-light);
+-}
+-.log-item.done::before { background: var(--success); }
+-.log-item.running::before { background: var(--accent-primary); animation: pulse 1.5s infinite; }
+-
+-@keyframes pulse {
+-  0% { opacity: 1; }
+-  50% { opacity: 0.3; }
+-  100% { opacity: 1; }
+-}
+-
+-.progress-bar-container {
+-  height: 4px;
+-  background: var(--border-light);
+-  border-radius: 4px;
+-  overflow: hidden;
+-  margin-bottom: 16px;
+-}
+-.progress-bar {
+-  height: 100%;
+-  background: var(--accent-primary);
+-  transition: width 0.3s ease;
+-}
+-
+-/* Debate Cards */
+-.debate-card {
+-  padding: 24px;
+-  border-radius: var(--radius-md);
+-}
+-.debate-card.bull {
+-  background: var(--success-bg);
+-  border: 1px solid rgba(16, 185, 129, 0.2);
+-}
+-.debate-card.bear {
+-  background: var(--danger-bg);
+-  border: 1px solid rgba(239, 68, 68, 0.2);
+-}
+-.debate-card h4 {
+-  font-size: 1.1rem;
+-  margin-bottom: 8px;
+-  font-weight: 600;
+-}
+-.debate-card p {
+-  color: var(--text-main);
+-  font-size: 0.95rem;
+-  line-height: 1.5;
+-  margin-bottom: 8px;
+-}
+-
+-/* Final Forecast */
+-.forecast-result {
+-  text-align: left;
+-  padding: 32px;
+-}
+-.forecast-signal {
+-  font-size: 2.5rem;
+-  font-weight: 700;
+-  letter-spacing: -0.02em;
+-  margin-bottom: 8px;
+-}
+-.forecast-signal.buy { color: var(--success); }
+-.forecast-signal.sell { color: var(--danger); }
+-.forecast-signal.hold { color: var(--text-muted); }
+-
+-.forecast-target {
+-  font-size: 1.25rem;
+-  font-weight: 500;
+-  color: var(--text-main);
+-  margin-bottom: 24px;
+-}
++@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
++:root{--bg:#f6f7fb;--card:#fff;--ink:#0f172a;--mute:#64748b;--line:#e5e7ef;--brand:#6366f1;--brand2:#06b6d4;--up:#059669;--upbg:#d1fae5;--down:#dc2626;--downbg:#fee2e2;--hold:#d97706;--holdbg:#fef3c7;--r:16px;--sh:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06)}
++@media(prefers-color-scheme:dark){:root{--bg:#070b16;--card:#0f1629;--ink:#e8ecf7;--mute:#8b97b5;--line:#1c2540;--upbg:#064e3b;--downbg:#4c1d1d;--holdbg:#4a3410;--sh:0 8px 28px rgba(0,0,0,.45)}}
++*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
++.app{display:grid;grid-template-columns:320px 1fr;min-height:100vh}
++.side{padding:28px 22px;border-right:1px solid var(--line);background:var(--card);position:sticky;top:0;height:100vh;overflow:auto}
++.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.15rem;letter-spacing:-.02em}
++.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;color:#fff}
++.tag{font-size:.7rem;color:var(--mute);margin:6px 0 26px}
++label{display:block;font-size:.72rem;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 7px}
++input[type=text],input[type=date]{width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 .95rem 'JetBrains Mono',monospace;outline:none;transition:.15s}
++input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(99,102,241,.18)}
++.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
++.chip{border:1px solid var(--line);background:none;color:var(--mute);padding:5px 10px;border-radius:99px;font-size:.72rem;cursor:pointer;transition:.15s}
++.chip:hover{color:var(--brand);border-color:var(--brand)}
++.switch{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;font-size:.88rem;font-weight:500;cursor:pointer}
++.switch small{display:block;color:var(--mute);font-weight:400;font-size:.72rem;margin-top:2px}
++.tog{width:42px;height:24px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex:none}
++.tog::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
++.tog.on{background:var(--brand)}.tog.on::after{left:21px}
++.run{width:100%;margin-top:22px;padding:14px;border:0;border-radius:13px;color:#fff;font:700 .95rem Inter;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 8px 20px rgba(99,102,241,.35);display:flex;gap:8px;justify-content:center;align-items:center;transition:.15s}
++.run:hover{transform:translateY(-1px)}.run:disabled{opacity:.55;cursor:wait;transform:none}
++.note{margin-top:22px;padding:12px 14px;border-radius:12px;background:var(--bg);font-size:.72rem;color:var(--mute);line-height:1.5}
++main{padding:30px 34px;display:flex;flex-direction:column;gap:20px;max-width:1180px;width:100%}
++.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--sh)}
++.card h3{margin:0 0 14px;font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);font-weight:700}
++.head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px}
++.head h2{margin:0;font-size:1.9rem;letter-spacing:-.03em}.head span{color:var(--mute);font-size:.88rem}
++.badge{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border-radius:99px;background:var(--upbg);color:var(--up);font-size:.74rem;font-weight:600}
++.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
++.kpi{padding:16px 18px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh)}
++.kpi small{color:var(--mute);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
++.kpi b{display:block;margin-top:6px;font-size:1.4rem;letter-spacing:-.02em}
++.steps{display:flex;gap:6px;margin:4px 0 14px}
++.step{flex:1;height:6px;border-radius:9px;background:var(--line);transition:.4s}.step.on{background:linear-gradient(90deg,var(--brand),var(--brand2))}
++.log{font:500 .76rem 'JetBrains Mono',monospace;color:var(--mute);max-height:150px;overflow:auto;line-height:1.8}
++.log .d{color:var(--up)}
++.result{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:20px}
++@media(max-width:1000px){.app{grid-template-columns:1fr}.side{position:static;height:auto}.result{grid-template-columns:1fr}main{padding:20px}}
++.sig{border-radius:var(--r);padding:26px;text-align:center}
++.sig.buy{background:var(--upbg);color:var(--up)}.sig.sell{background:var(--downbg);color:var(--down)}.sig.hold{background:var(--holdbg);color:var(--hold)}
++.sig .w{font-size:3rem;font-weight:800;letter-spacing:-.04em;line-height:1}
++.sig .rng{margin-top:12px;font:600 .95rem 'JetBrains Mono',monospace;color:var(--ink)}
++.conf{margin-top:18px;height:8px;border-radius:9px;background:rgba(127,127,127,.2);overflow:hidden}.conf i{display:block;height:100%;background:currentColor;border-radius:9px}
++.sig small{display:block;margin-top:7px;color:var(--ink);opacity:.7;font-size:.76rem}
++.reason{line-height:1.7;font-size:.93rem;color:var(--ink)}
++.risks{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
++.risk{padding:6px 12px;border-radius:99px;background:var(--downbg);color:var(--down);font-size:.76rem;font-weight:500}
++.debate{display:grid;grid-template-columns:1fr 1fr;gap:14px}
++@media(max-width:800px){.debate{grid-template-columns:1fr}}
++.turn{padding:16px;border-radius:14px;border:1px solid var(--line)}
++.turn.bull{background:linear-gradient(180deg,var(--upbg),transparent 70%)}.turn.bear{background:linear-gradient(180deg,var(--downbg),transparent 70%)}
++.turn h4{margin:0 0 8px;font-size:.82rem}.turn ul{margin:0;padding-left:18px;font-size:.84rem;line-height:1.6}
++.news a,.news div{display:block;padding:9px 0;border-bottom:1px solid var(--line);font-size:.86rem;color:var(--ink);text-decoration:none}
++.err{padding:14px 16px;border-radius:12px;background:var(--downbg);color:var(--down);font-size:.88rem}
++.empty{text-align:center;padding:60px 20px;color:var(--mute)}
++@keyframes sp{to{transform:rotate(360deg)}}.spin{animation:sp 1s linear infinite}

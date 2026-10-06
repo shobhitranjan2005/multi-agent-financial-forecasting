@@ -160,6 +160,24 @@ def cmd_ablate(args) -> int:
     return 0
 
 
+def cmd_preflight(args) -> int:
+    from backend import llm
+    from backend.eval import preflight
+    if not llm.is_configured():
+        print("\n  GEMINI_API_KEY not set in .env\n", file=sys.stderr)
+        return 3
+    try:
+        rep = preflight.run(_d(args.start), _d(args.end), step=args.step)
+    except preflight.provenance.UnpinnedModelError as exc:
+        print(f"\n  {exc}\n", file=sys.stderr)
+        return 4
+    print("\n  PREFLIGHT VERDICT")
+    for line in rep["verdict"]:
+        print(f"   - {line}")
+    print(f"\n  Full report: {rep['path']}\n  Paste that file's 'verdict' and 'probe' blocks back for analysis.\n")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="evaluate", description="Leakage-free evaluation harness.")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -201,6 +219,12 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--limit", type=int)
     c.add_argument("--nonce", default="")
     c.set_defaults(func=cmd_compare)
+
+    pf = sub.add_parser("preflight", help="gate: pinned model, recall cutoff, data availability")
+    pf.add_argument("--start", default="2024-01-01")
+    pf.add_argument("--end", default="2026-09-01")
+    pf.add_argument("--step", type=int, default=30)
+    pf.set_defaults(func=cmd_preflight)
 
     args = ap.parse_args(argv)
     enable_utf8_console()

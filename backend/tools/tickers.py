@@ -126,6 +126,7 @@ def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
         raise UnsupportedMarketError(f"Empty ticker. {_ERROR}")
 
     raw = symbol.strip().upper()
+    inferred_suffix = False
 
     if "." in raw:
         base, _, suffix = raw.rpartition(".")
@@ -135,6 +136,7 @@ def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
             raise UnsupportedMarketError(f"Unsupported exchange suffix '{suffix}'.{hint} {_ERROR}")
     else:
         base, suffix = raw, Config.DEFAULT_SUFFIX
+        inferred_suffix = True
 
     if not _SYMBOL_RE.match(base):
         raise UnsupportedMarketError(f"'{symbol}' is not a valid NSE/BSE symbol. {_ERROR}")
@@ -142,6 +144,7 @@ def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
     # Membership check applies to NSE only — BSE scrip codes are not in the
     # NSE bhavcopy, and there is no free BSE master in scope.
     if verify and suffix == ".NS":
+        listed: set = set()
         if as_of is not None:
             try:
                 listed = _listed_on(as_of)
@@ -155,9 +158,18 @@ def resolve(symbol: str, verify: bool = True, as_of: date | None = None) -> str:
                 )
 
         master = load_nse_symbols()
-        if master and base not in master:
+        if master:
+            if base not in master:
+                raise UnsupportedMarketError(
+                    f"'{base}' is not listed on NSE. {_ERROR}"
+                )
+        elif inferred_suffix:
+            # FAIL CLOSED: with no membership source available, a bare symbol
+            # ("AAPL") must not be silently promoted to "AAPL.NS". Write the
+            # suffix explicitly (RELIANCE.NS) to assert it is an NSE ticker.
             raise UnsupportedMarketError(
-                f"'{base}' is not listed on NSE. {_ERROR}"
+                f"Cannot verify '{base}' as an NSE symbol (symbol master unavailable). "
+                f"Write it with its suffix, e.g. '{base}.NS'. {_ERROR}"
             )
 
     return f"{base}{suffix}"

@@ -16,7 +16,7 @@ from typing import Callable, Optional
 
 from backend.agents.schemas import ForecastRecord
 from backend.config import Config
-from backend.eval import metrics, naive, outcomes, testset as testset_mod
+from backend.eval import metrics, naive, outcomes, provenance, testset as testset_mod
 from backend.eval.metrics import Scored
 
 RESULTS_DIR = Config.DATA_DIR.parent / "results"
@@ -101,6 +101,8 @@ def run(
     **forecaster_kwargs,
 ) -> dict:
     """Run `system` over the frozen test set and return scored results."""
+    if system not in naive.REGISTRY:
+        provenance.require_pinned_model()
     cases = testset_mod.cases(testset_path)
     if limit:
         cases = cases[:limit]
@@ -147,6 +149,7 @@ def run(
         "nonce": nonce,
         "run_at": datetime.now().isoformat(timespec="seconds"),
         "testset": str(testset_path),
+        "provenance": provenance.collect(testset_path, system),
         "summary": summary,
         "reliability": metrics.reliability_table(scored),
         "scored": scored,
@@ -192,6 +195,7 @@ def write_results(result: dict, outdir: Path = RESULTS_DIR) -> dict[str, Path]:
         "nonce": result["nonce"],
         "run_at": result["run_at"],
         "testset": result["testset"],
+        "provenance": result.get("provenance"),
         "summary": result["summary"],
         "reliability": result["reliability"],
         "failures": result["failures"],
