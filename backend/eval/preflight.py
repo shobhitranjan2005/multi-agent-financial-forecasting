@@ -70,17 +70,34 @@ def verdict(probe: dict | None, audit: list[dict], case_dates: list[str], llm_re
 
 def run(start: date, end: date, step: int = 30, path: Path | None = None) -> dict:
     provenance.require_pinned_model()          # stop early: probe is tied to the model ID
+    print("\nStep 1/2  Recall probe (Gemini calls, paced to your quota). Safe to rerun: answers are cached.", flush=True)
     probe = recall_probe.sweep(start, end, step_days=step)
+    print("          probe finished.", flush=True)
     path = path or Config.DATA_DIR / "testset.json"
     cases = testset_mod.cases(path)
-    audit = [audit_case(c.ticker, date.fromisoformat(str(c.as_of))) for c in cases]
+    print(f"\nStep 2/2  Data audit of {len(cases)} test cases. First run downloads a lot and can take "
+          f"30+ minutes; do NOT press Ctrl+C (everything is cached for next time).", flush=True)
+    audit, interrupted = [], False
+    try:
+        for i, c in enumerate(cases, 1):
+            print(f"  [{i}/{len(cases)}] {c.ticker} {c.as_of} ...", flush=True)
+            a = audit_case(c.ticker, date.fromisoformat(str(c.as_of)))
+            print("      FAILED: " + a["error"][:90] if "error" in a else
+                  f"      news={a['news_items']}  fundamentals={a['fundamental_values']}  macro={a['macro_values']}",
+                  flush=True)
+            audit.append(a)
+    except KeyboardInterrupt:
+        interrupted = True
+        print("\n  Stopped early; reporting what finished.", flush=True)
     llm_exist = any(not p.name.startswith("naive") for p in RESULTS.glob("*.json")
                     if not p.name.startswith("preflight"))
     report = {"run_at": datetime.now().isoformat(timespec="seconds"),
               "provenance": provenance.collect(path, "preflight"),
               "probe": {k: v for k, v in probe.items() if k != "probes"},
               "probes": probe["probes"], "audit": audit,
-              "verdict": verdict(probe, audit, [str(c.as_of) for c in cases], llm_exist)}
+              "verdict": ([f"PARTIAL: audit covers {len(audit)}/{len(cases)} cases; rerun to finish."]
+                          if interrupted or len(audit) < len(cases) else [])
+              + verdict(probe, audit, [str(c.as_of) for c in cases], llm_exist)}
     RESULTS.mkdir(exist_ok=True)
     out = RESULTS / f"preflight_{datetime.now():%Y%m%d_%H%M%S}.json"
     out.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
