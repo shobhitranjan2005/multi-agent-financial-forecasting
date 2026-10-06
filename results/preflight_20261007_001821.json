@@ -1,0 +1,367 @@
+{
+  "run_at": "2026-10-07T00:18:20",
+  "provenance": {
+    "testset_sha256": "2bb3c42703f80f5337602bfd4742cb76a1910b9c2b42ef9ae4c2b225aa79fcf5",
+    "git_commit": "478f1c08fb5e073b4af3add6ed14a436223291f4",
+    "git_dirty": true,
+    "model": "gemini-3.5-flash-lite",
+    "horizon_sessions": 21,
+    "packages": {
+      "pandas": "2.3.3",
+      "numpy": "2.2.6",
+      "pydantic": "2.13.4",
+      "yfinance": "1.5.1",
+      "langgraph": "1.2.6",
+      "google-genai": "2.9.0"
+    }
+  },
+  "probe": {
+    "run_at": "2026-10-06T23:53:07",
+    "model": "gemini-3.5-flash-lite",
+    "tolerance_pct": 0.5,
+    "window": {
+      "start": "2024-01-01",
+      "end": "2026-09-01"
+    },
+    "n_probes": 33,
+    "n_recalled": 0,
+    "latest_recalled_date": null,
+    "median_error_pct": null,
+    "recommended_testset_start": "2024-01-01",
+    "interpretation": "Test-set as_of dates must start after latest_recalled_date. A refusal is weaker evidence than a wrong answer \u2014 the model may decline on facts it holds. Report both counts rather than only the boundary."
+  },
+  "probes": [
+    {
+      "probe_date": "2024-01-01",
+      "actual_close": 21741.9,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-01-31",
+      "actual_close": 21725.7,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-03-01",
+      "actual_close": 22338.75,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-03-28",
+      "actual_close": 22326.9,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-04-30",
+      "actual_close": 22604.85,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-05-30",
+      "actual_close": 22488.65,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-06-28",
+      "actual_close": 24010.6,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-07-29",
+      "actual_close": 24836.1,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-08-28",
+      "actual_close": 25052.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-09-27",
+      "actual_close": 26178.95,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-10-25",
+      "actual_close": 24180.8,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-11-26",
+      "actual_close": 24194.5,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2024-12-26",
+      "actual_close": 23750.2,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-01-24",
+      "actual_close": 23092.2,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-02-24",
+      "actual_close": 22553.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-03-26",
+      "actual_close": 23486.85,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-04-25",
+      "actual_close": 24039.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-05-23",
+      "actual_close": 24853.15,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-06-24",
+      "actual_close": 25044.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-07-24",
+      "actual_close": 25062.1,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-08-22",
+      "actual_close": 24870.1,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-09-22",
+      "actual_close": 25202.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-10-21",
+      "actual_close": 25868.6,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-11-21",
+      "actual_close": 26068.15,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-12-19",
+      "actual_close": 25966.4,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2026-01-20",
+      "actual_close": 25232.5,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2026-02-19",
+      "actual_close": 25454.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2026-03-20",
+      "actual_close": 23114.5,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2026-04-20",
+      "actual_close": 24364.85,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2026-05-20",
+      "actual_close": 23659.0,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2026-06-19",
+      "actual_close": 24013.1,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2026-07-17",
+      "actual_close": 24334.3,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2026-08-18",
+      "actual_close": 24154.9,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff"
+    }
+  ],
+  "audit": [
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-06-02",
+      "news_items": 0,
+      "fundamental_values": 33,
+      "macro_values": 45
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-06-02",
+      "news_items": 0,
+      "fundamental_values": 34,
+      "macro_values": 39
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2025-06-02",
+      "news_items": 0,
+      "fundamental_values": 34,
+      "macro_values": 38
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2025-06-02",
+      "news_items": 41,
+      "fundamental_values": 34,
+      "macro_values": 45
+    }
+  ],
+  "verdict": [
+    "PARTIAL: audit covers 4/20 cases; rerun to finish.",
+    "No recall detected in the probed window (a refusal is weaker evidence than a wrong answer; report probe counts, not just the boundary).",
+    "VACUOUS ABLATION RISK: Sentiment (news) evidence is empty for 75% of cases; removing that specialist cannot change results by construction. Report as a limitation or change the data source."
+  ]
+}

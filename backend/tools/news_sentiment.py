@@ -138,17 +138,43 @@ def _dedup(articles: list[dict], threshold: float = 0.88) -> list[dict]:
     return kept
 
 
-def _company_query(ticker: str, company_name: Optional[str]) -> str:
-    """Build the GDELT query.
+# Names Indian press actually prints. The legal name Yahoo returns ("Axis Bank
+# Limited") is almost never written that way, and GDELT matches exact phrases, so
+# querying it silently returns nothing. A fixed table also makes the query
+# independent of Yahoo (reproducible, and no non-point-in-time lookup). Reviewable
+# by a human: edit here, never inside a result.
+NEWS_ALIASES: dict[str, list[str]] = {
+    "RELIANCE": ["Reliance Industries"], "TCS": ["Tata Consultancy Services", "TCS"],
+    "HDFCBANK": ["HDFC Bank"], "INFY": ["Infosys"], "ICICIBANK": ["ICICI Bank"],
+    "HINDUNILVR": ["Hindustan Unilever"], "ITC": ["ITC Limited", "ITC share"],
+    "SBIN": ["State Bank of India", "SBI"], "BHARTIARTL": ["Bharti Airtel"],
+    "KOTAKBANK": ["Kotak Mahindra Bank"], "LT": ["Larsen & Toubro", "Larsen and Toubro"],
+    "AXISBANK": ["Axis Bank"], "ASIANPAINT": ["Asian Paints"], "MARUTI": ["Maruti Suzuki"],
+    "SUNPHARMA": ["Sun Pharma", "Sun Pharmaceutical"], "TITAN": ["Titan Company"],
+    "ULTRACEMCO": ["UltraTech Cement"], "WIPRO": ["Wipro"], "NESTLEIND": ["Nestle India"],
+    "TATAMOTORS": ["Tata Motors"], "TATASTEEL": ["Tata Steel"], "JSWSTEEL": ["JSW Steel"],
+    "POWERGRID": ["Power Grid Corporation", "Power Grid"], "NTPC": ["NTPC"],
+    "ONGC": ["ONGC", "Oil and Natural Gas Corporation"], "HCLTECH": ["HCLTech", "HCL Technologies"],
+    "TECHM": ["Tech Mahindra"], "BAJFINANCE": ["Bajaj Finance"], "CIPLA": ["Cipla"],
+    "DRREDDY": ["Dr Reddy's", "Dr Reddys"],
+}
+_LEGAL = re.compile(r"\s+(limited|ltd\.?|corporation|corp\.?|inc\.?)\s*$", re.I)
 
-    Uses the registered company name, not the bare ticker root: querying
-    "Reliance" returns unrelated global hits, while "Reliance Industries" is the
-    company. Scoped to Indian sources.
-    """
+
+def _strip_legal(name: str) -> str:
+    return _LEGAL.sub("", name.strip())
+
+
+def _company_query(ticker: str, company_name: Optional[str]) -> str:
+    """Build the GDELT query: curated aliases first, else the de-suffixed legal name."""
     base = tickers.base_symbol(ticker)
-    name = company_name or base
-    phrase = f'"{name}"' if " " in name else name
-    return f"{phrase} sourcecountry:india"
+    if company_name is None and base in NEWS_ALIASES:
+        names = NEWS_ALIASES[base]
+    else:
+        names = [_strip_legal(company_name or base)]
+    phrases = [f'"{n}"' if " " in n else n for n in names]
+    q = phrases[0] if len(phrases) == 1 else "(" + " OR ".join(phrases) + ")"
+    return f"{q} sourcecountry:india"
 
 
 def get_news(
@@ -169,7 +195,7 @@ def get_news(
     as_of_d = _as_date(as_of)
     cache = get_cache()
 
-    if company_name is None:
+    if company_name is None and tickers.base_symbol(ticker) not in NEWS_ALIASES:
         try:
             from backend.tools.fundamentals import get_company_info
             company_name = get_company_info(ticker).get("name")
@@ -231,7 +257,7 @@ def get_news(
             ],
         }
 
-    return cache.historical("gdelt", ticker, f"news_{lookback_days}d", as_of_d.isoformat(), loader)
+    return cache.historical("gdelt", ticker, f"news_v2_{lookback_days}d", as_of_d.isoformat(), loader)
 
 
 def get_live_rss(limit_per_feed: int = 15) -> dict:
