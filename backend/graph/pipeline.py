@@ -330,6 +330,7 @@ def _assemble_record(ctx, final_state, started, *, debate, dropped, nonce):
         parse_failures=usage.parse_failures,
         nonce=nonce,
         notes=notes,
+        transcript=final_state.get("transcript")
     )
 
 

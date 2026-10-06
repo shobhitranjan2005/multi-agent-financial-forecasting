@@ -393,3 +393,18 @@ def results() -> dict:
             key=lambda r: r["modified"], reverse=True,
         )
     }
+
+
+@app.get("/api/results/{filename}")
+def get_result(filename: str) -> dict:
+    from backend.eval.harness import RESULTS_DIR
+    import json
+    
+    file_path = RESULTS_DIR / filename
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="Result file not found")
+        
+    content = file_path.read_text(encoding="utf-8")
+    if filename.endswith(".json"):
+        return {"content": json.loads(content)}
+    return {"content": content}

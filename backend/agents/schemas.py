@@ -159,7 +159,7 @@ class ForecastRecord(BaseModel):
     model_config = _ordered(
         "ticker", "as_of", "system", "last_close_inr", "forecast",
         "horizon_sessions", "target_date", "llm_calls", "total_tokens",
-        "seconds", "parse_failures", "nonce", "notes",
+        "seconds", "parse_failures", "nonce", "notes", "transcript",
     )
 
     ticker: str
@@ -175,3 +175,4 @@ class ForecastRecord(BaseModel):
     parse_failures: int
     nonce: str
     notes: list[str]
+    transcript: Optional[str] = None

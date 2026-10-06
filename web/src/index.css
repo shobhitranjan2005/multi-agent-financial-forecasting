@@ -55,3 +55,22 @@ main{padding:30px 34px;display:flex;flex-direction:column;gap:20px;max-width:118
 .err{padding:14px 16px;border-radius:12px;background:var(--downbg);color:var(--down);font-size:.88rem}
 .empty{text-align:center;padding:60px 20px;color:var(--mute)}
 @keyframes sp{to{transform:rotate(360deg)}}.spin{animation:sp 1s linear infinite}
+
+/* Layout overrides for routing */
+.app-container { display: flex; flex-direction: column; min-height: 100vh; }
+.top-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 34px; background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+.nav-links { display: flex; gap: 16px; }
+.nav-link { background: none; border: none; color: var(--mute); font-size: 0.95rem; font-weight: 600; cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: 0.15s; display: flex; align-items: center; gap: 8px; }
+.nav-link:hover { background: rgba(99,102,241,0.08); color: var(--brand); }
+.nav-link.active { background: rgba(99,102,241,0.12); color: var(--brand); }
+.page-content { flex: 1; display: flex; flex-direction: column; }
+.forecast-layout { display: grid; grid-template-columns: 320px 1fr; flex: 1; }
+.forecast-main { padding: 30px 34px; display: flex; flex-direction: column; gap: 20px; max-width: 1180px; width: 100%; }
+.experiments-main { padding: 30px 34px; max-width: 1180px; width: 100%; margin: 0 auto; }
+
+/* Table styling for Experiments */
+.exp-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+.exp-table th { border-bottom: 2px solid var(--line); padding: 12px 16px; color: var(--mute); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.72rem; }
+.exp-table td { border-bottom: 1px solid var(--line); padding: 14px 16px; color: var(--ink); }
+.exp-table tr:last-child td { border-bottom: none; }
+.exp-table b { font-weight: 600; }

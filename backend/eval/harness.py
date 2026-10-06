@@ -199,6 +199,7 @@ def write_results(result: dict, outdir: Path = RESULTS_DIR) -> dict[str, Path]:
         "summary": result["summary"],
         "reliability": result["reliability"],
         "scored": [vars(s) for s in result["scored"]],
+        "records": [r.model_dump(mode="json") if hasattr(r, "model_dump") else r for r in result.get("records", [])],
         "failures": result["failures"],
     }, indent=2, default=str), encoding="utf-8")
 
