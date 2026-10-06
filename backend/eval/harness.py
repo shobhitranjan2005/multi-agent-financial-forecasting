@@ -198,6 +198,7 @@ def write_results(result: dict, outdir: Path = RESULTS_DIR) -> dict[str, Path]:
         "provenance": result.get("provenance"),
         "summary": result["summary"],
         "reliability": result["reliability"],
+        "scored": [vars(s) for s in result["scored"]],
         "failures": result["failures"],
     }, indent=2, default=str), encoding="utf-8")
 

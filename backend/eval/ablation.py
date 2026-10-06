@@ -30,7 +30,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from backend.eval import harness, metrics
+from backend.eval import harness, metrics, stats
 
 # The standard suite, in reporting order. Non-LLM baselines first so the report
 # reads as "here is the floor, now here is what the machinery buys you".
@@ -66,6 +66,15 @@ def _mean_std(values: list[Optional[float]]) -> tuple[Optional[float], Optional[
     return mean, std
 
 
+
+def _make_map(scored_by_run: list[list]) -> dict:
+    out = {}
+    for run_idx, run_scored in enumerate(scored_by_run):
+        for s in run_scored:
+            if s.direction_correct is not None:
+                out[(f"{s.ticker}_{run_idx}", s.as_of)] = float(s.direction_correct)
+    return out
+
 def aggregate(summaries: list[dict]) -> dict:
     """Collapse repeats of one configuration into mean +/- std."""
     if not summaries:
@@ -96,6 +105,7 @@ def run_suite(
     results: dict[str, dict] = {}
     for system in systems:
         per_run: list[dict] = []
+        scored_by_run = []
         for i in range(1, repeats + 1):
             # Unique nonce per repeat -- see the module docstring.
             nonce = f"r{i}" if repeats > 1 else ""
@@ -109,20 +119,32 @@ def run_suite(
                 continue
             harness.write_results(result)
             per_run.append(result["summary"])
+            scored_by_run.append(result["scored"])
         if per_run:
-            results[system] = aggregate(per_run)
+            agg = aggregate(per_run)
+            agg["scored_map"] = _make_map(scored_by_run)
+            try:
+                if len(agg["scored_map"]) > 0:
+                    ci = stats.mean_ci(agg["scored_map"])
+                    agg["dir_acc_ci_low"] = ci["ci_low"] * 100
+                    agg["dir_acc_ci_high"] = ci["ci_high"] * 100
+            except ValueError:
+                pass
+            results[system] = agg
     return results
 
 
 # ---------------------------------------------------------------------------
 # report rendering
 # ---------------------------------------------------------------------------
-def _fmt(value, suffix: str = "", std=None) -> str:
+def _fmt(value, suffix: str = "", std=None, ci_low=None, ci_high=None) -> str:
     if value is None:
         return "—"
     text = f"{value:,.2f}{suffix}" if isinstance(value, float) else f"{value:,}{suffix}"
-    if std:
+    if std is not None:
         text += f" ±{std:,.2f}"
+    if ci_low is not None and ci_high is not None:
+        text += f" [{ci_low:,.1f}, {ci_high:,.1f}]"
     return text
 
 
@@ -156,10 +178,35 @@ def comparison_table(results: dict[str, dict], systems: list[str]) -> str:
         s = results.get(system)
         if not s:
             continue
-        cells = [_fmt(s.get(k), std=s.get(f"{k}_std")) for k, _ in cols]
+        cells = []
+        for k, _ in cols:
+            if k == "directional_accuracy_pct" and "dir_acc_ci_low" in s:
+                cells.append(_fmt(s.get(k), std=s.get(f"{k}_std"), ci_low=s.get("dir_acc_ci_low"), ci_high=s.get("dir_acc_ci_high")))
+            else:
+                cells.append(_fmt(s.get(k), std=s.get(f"{k}_std")))
         lines.append(f"| {system} | {s.get('n_scoreable', 0)} | " + " | ".join(cells) + " |")
     return "\n".join(lines)
 
+
+
+def _pair_stats(a_sys: str, b_sys: str, results: dict) -> str:
+    if a_sys not in results or b_sys not in results:
+        return "—"
+    a_map = results[a_sys].get("scored_map", {})
+    b_map = results[b_sys].get("scored_map", {})
+    keys = sorted(set(a_map) & set(b_map))
+    if not keys: return "—"
+    try:
+        diff_ci = stats.paired_diff_ci(a_map, b_map)
+        a_bools = [bool(a_map[k]) for k in keys]
+        b_bools = [bool(b_map[k]) for k in keys]
+        mc = stats.mcnemar_exact(a_bools, b_bools)
+        
+        sig = "" if diff_ci["excludes_zero"] else " (no supported difference)"
+        mc_text = f"p={mc['p_value']:.3f} optimistic: assumes independent cases"
+        return f"{diff_ci['mean']*100:+.2f} [{diff_ci['ci_low']*100:+.2f}, {diff_ci['ci_high']*100:+.2f}]{sig} | {mc_text}"
+    except Exception as exc:
+        return f"error: {exc}"
 
 def debate_verdict(results: dict[str, dict]) -> str:
     """The headline finding: what the debate bought, and what it cost."""
@@ -171,6 +218,7 @@ def debate_verdict(results: dict[str, dict]) -> str:
 
     acc_delta = _delta(full.get("directional_accuracy_pct"),
                        lean.get("directional_accuracy_pct"))
+    acc_stats = _pair_stats("multiagent", "multiagent-nodebate", results)
     rel_delta = _delta(full.get("nifty_relative_accuracy_pct"),
                        lean.get("nifty_relative_accuracy_pct"))
     brier_delta = _delta(full.get("brier_score"), lean.get("brier_score"))
@@ -183,7 +231,7 @@ def debate_verdict(results: dict[str, dict]) -> str:
         "| Measure | With debate | Without debate | Delta |",
         "| :--- | ---: | ---: | ---: |",
         f"| Directional accuracy % | {_fmt(full.get('directional_accuracy_pct'))} | "
-        f"{_fmt(lean.get('directional_accuracy_pct'))} | {acc_delta} |",
+        f"{_fmt(lean.get('directional_accuracy_pct'))} | {acc_delta}<br/>_{acc_stats}_ |",
         f"| NIFTY-relative accuracy % | {_fmt(full.get('nifty_relative_accuracy_pct'))} | "
         f"{_fmt(lean.get('nifty_relative_accuracy_pct'))} | {rel_delta} |",
         f"| Brier score (lower better) | {_fmt(full.get('brier_score'))} | "
@@ -224,9 +272,10 @@ def leave_one_out_table(results: dict[str, dict]) -> str:
         if not s:
             continue
         name = system.replace("multiagent-no-", "")
+        diff_stats = _pair_stats(system, "multiagent", results)
         lines.append(
             f"| {name} | {_fmt(s.get('directional_accuracy_pct'))} | "
-            f"{_delta(s.get('directional_accuracy_pct'), full.get('directional_accuracy_pct'))} | "
+            f"{_delta(s.get('directional_accuracy_pct'), full.get('directional_accuracy_pct'))}<br/>_{diff_stats}_ | "
             f"{_fmt(s.get('nifty_relative_accuracy_pct'))} | "
             f"{_fmt(s.get('mean_tokens_per_forecast'))} |"
         )

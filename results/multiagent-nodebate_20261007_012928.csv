@@ -1,0 +1,6 @@
+ticker,as_of,system,predicted_direction,actual_direction,direction_correct,relative_correct,confidence_pct,target_low,target_high,actual_close,return_pct,benchmark_return_pct,excess_return_pct,abs_pct_error,brier,tokens,llm_calls,seconds,parse_failed,note
+AXISBANK.NS,2024-01-01,multiagent-nodebate,up,down,False,False,58.0,1090.0,1160.0,1084.25,-1.225,-0.204,-1.021,3.758,0.3364,2265,4,8.67,False,
+BHARTIARTL.NS,2024-01-01,multiagent-nodebate,up,up,True,True,65.0,980.0,1050.0,1151.2,13.637,-0.204,13.841,11.831,0.1225,2489,4,5.1,False,
+DRREDDY.NS,2024-01-01,multiagent-nodebate,up,up,True,True,60.0,1100.0,1220.0,1198.63,2.946,-0.204,3.15,3.223,0.16,2220,4,4.78,False,
+JSWSTEEL.NS,2024-01-01,multiagent-nodebate,up,down,False,False,65.0,850.0,920.0,801.7,-8.649,-0.204,-8.445,10.39,0.4225,2495,4,8.99,False,
+MARUTI.NS,2024-01-01,multiagent-nodebate,up,up,True,True,55.0,9800.0,10800.0,10637.95,3.449,-0.204,3.653,3.177,0.2025,2428,4,7.43,False,
