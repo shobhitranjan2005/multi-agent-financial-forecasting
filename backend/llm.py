@@ -21,6 +21,8 @@ Gemini structured-output constraints this module works around (see Task 3.1):
 from __future__ import annotations
 
 import json
+import os
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -129,6 +131,35 @@ def _get_client():
     return _client
 
 
+# --- client-side pacing -----------------------------------------------------
+# Free-tier Gemini allows ~15 requests/minute PER MODEL. The four specialists run
+# in parallel, so without pacing the quota is blown at once. One process-wide
+# slot clock keeps every thread under LLM_MAX_RPM (default 12). Cache hits never
+# reach here, so a resumed experiment only spends quota on genuinely new calls.
+_throttle_lock = threading.Lock()
+_next_slot = 0.0
+
+
+def _throttle() -> None:
+    global _next_slot
+    interval = 60.0 / max(1.0, float(os.getenv("LLM_MAX_RPM", "12")))
+    with _throttle_lock:
+        now = time.monotonic()
+        wait = max(0.0, _next_slot - now)
+        _next_slot = max(now, _next_slot) + interval
+    if wait:
+        time.sleep(wait)
+
+
+def _penalise(exc: Exception) -> None:
+    """Honour the server's retry delay for ALL threads, not just the failing one."""
+    global _next_slot
+    m = re.search(r"retry in ([0-9.]+)s", str(exc), re.I) or re.search(r"retryDelay\W+(\d+)s", str(exc))
+    delay = float(m.group(1)) + 1.0 if m else 15.0
+    with _throttle_lock:
+        _next_slot = max(_next_slot, time.monotonic() + delay)
+
+
 def _is_rate_limit(exc: Exception) -> bool:
     text = f"{type(exc).__name__}: {exc}".lower()
     return any(s in text for s in ("429", "503", "resource_exhausted", "quota", "rate limit", "unavailable", "high demand"))
@@ -137,7 +168,7 @@ def _is_rate_limit(exc: Exception) -> bool:
 @retry(
     retry=retry_if_exception_type(LLMRateLimit),
     wait=wait_exponential(multiplier=2, min=4, max=60),
-    stop=stop_after_attempt(4),
+    stop=stop_after_attempt(6),
     reraise=True,
 )
 def _call_gemini(
@@ -160,6 +191,7 @@ def _call_gemini(
         cfg["response_mime_type"] = "application/json"
         cfg["response_schema"] = schema
 
+    _throttle()
     try:
         resp = client.models.generate_content(
             model=model,
@@ -168,6 +200,12 @@ def _call_gemini(
         )
     except Exception as exc:  # SDK raises provider-specific errors
         if _is_rate_limit(exc):
+            if "perday" in str(exc).lower():   # daily cap: retrying within the day is pointless
+                raise LLMError(
+                    "Daily Gemini quota exhausted. Progress is cached; rerun the same command "
+                    "tomorrow (or enable billing). " + str(exc)[:200]
+                ) from exc
+            _penalise(exc)
             raise LLMRateLimit(str(exc)) from exc
         raise LLMError(f"{type(exc).__name__}: {exc}") from exc
 
