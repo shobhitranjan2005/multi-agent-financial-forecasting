@@ -1,118 +1,816 @@
 {
-  "created": "2026-08-14T19:16:01",
+  "created": "2026-10-07T00:26:59",
   "seed": 20260806,
   "window": {
-    "start": "2025-06-02",
-    "end": "2025-12-31"
+    "start": "2024-01-01",
+    "end": "2026-09-01"
   },
   "horizon_sessions": 21,
-  "n_cases": 20,
+  "n_cases": 160,
   "universe_verified_against_bhavcopy": true,
   "cases": [
     {
       "ticker": "AXISBANK.NS",
-      "as_of": "2025-06-02",
+      "as_of": "2024-01-01",
       "horizon_sessions": 21
     },
     {
       "ticker": "BHARTIARTL.NS",
-      "as_of": "2025-06-02",
-      "horizon_sessions": 21
-    },
-    {
-      "ticker": "MARUTI.NS",
-      "as_of": "2025-06-02",
-      "horizon_sessions": 21
-    },
-    {
-      "ticker": "RELIANCE.NS",
-      "as_of": "2025-06-02",
-      "horizon_sessions": 21
-    },
-    {
-      "ticker": "TATAMOTORS.NS",
-      "as_of": "2025-06-02",
-      "horizon_sessions": 21
-    },
-    {
-      "ticker": "CIPLA.NS",
-      "as_of": "2025-07-22",
+      "as_of": "2024-01-01",
       "horizon_sessions": 21
     },
     {
       "ticker": "DRREDDY.NS",
-      "as_of": "2025-07-22",
-      "horizon_sessions": 21
-    },
-    {
-      "ticker": "ONGC.NS",
-      "as_of": "2025-07-22",
-      "horizon_sessions": 21
-    },
-    {
-      "ticker": "POWERGRID.NS",
-      "as_of": "2025-07-22",
-      "horizon_sessions": 21
-    },
-    {
-      "ticker": "TATASTEEL.NS",
-      "as_of": "2025-07-22",
-      "horizon_sessions": 21
-    },
-    {
-      "ticker": "CIPLA.NS",
-      "as_of": "2025-09-12",
+      "as_of": "2024-01-01",
       "horizon_sessions": 21
     },
     {
       "ticker": "JSWSTEEL.NS",
-      "as_of": "2025-09-12",
+      "as_of": "2024-01-01",
       "horizon_sessions": 21
     },
     {
-      "ticker": "NESTLEIND.NS",
-      "as_of": "2025-09-12",
+      "ticker": "MARUTI.NS",
+      "as_of": "2024-01-01",
       "horizon_sessions": 21
     },
     {
-      "ticker": "ONGC.NS",
-      "as_of": "2025-09-12",
+      "ticker": "NTPC.NS",
+      "as_of": "2024-01-01",
       "horizon_sessions": 21
     },
     {
-      "ticker": "TCS.NS",
-      "as_of": "2025-09-12",
+      "ticker": "RELIANCE.NS",
+      "as_of": "2024-01-01",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TATASTEEL.NS",
+      "as_of": "2024-01-01",
       "horizon_sessions": 21
     },
     {
       "ticker": "BHARTIARTL.NS",
-      "as_of": "2025-11-06",
+      "as_of": "2024-02-16",
       "horizon_sessions": 21
     },
     {
       "ticker": "CIPLA.NS",
-      "as_of": "2025-11-06",
+      "as_of": "2024-02-16",
       "horizon_sessions": 21
     },
     {
       "ticker": "DRREDDY.NS",
-      "as_of": "2025-11-06",
+      "as_of": "2024-02-16",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "as_of": "2024-02-16",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "as_of": "2024-02-16",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2024-02-16",
       "horizon_sessions": 21
     },
     {
       "ticker": "SUNPHARMA.NS",
-      "as_of": "2025-11-06",
+      "as_of": "2024-02-16",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2024-02-16",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2024-04-05",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2024-04-05",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2024-04-05",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2024-04-05",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2024-04-05",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2024-04-05",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2024-04-05",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2024-04-05",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2024-05-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2024-05-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2024-05-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2024-05-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2024-05-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2024-05-27",
       "horizon_sessions": 21
     },
     {
       "ticker": "TECHM.NS",
-      "as_of": "2025-11-06",
+      "as_of": "2024-05-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2024-05-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2024-07-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "as_of": "2024-07-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2024-07-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2024-07-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2024-07-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2024-07-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2024-07-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2024-07-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2024-08-28",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2024-08-28",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2024-08-28",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2024-08-28",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2024-08-28",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2024-08-28",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2024-08-28",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2024-08-28",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2024-10-14",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2024-10-14",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2024-10-14",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2024-10-14",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2024-10-14",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2024-10-14",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2024-10-14",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2024-10-14",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2024-11-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2024-11-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2024-11-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2024-11-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2024-11-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2024-11-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2024-11-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2024-11-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-01-15",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-01-15",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-01-15",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HDFCBANK.NS",
+      "as_of": "2025-01-15",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2025-01-15",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2025-01-15",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-01-15",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2025-01-15",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2025-03-03",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-03-03",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-03-03",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2025-03-03",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-03-03",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2025-03-03",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2025-03-03",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2025-03-03",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2025-04-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-04-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-04-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HDFCBANK.NS",
+      "as_of": "2025-04-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2025-04-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2025-04-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2025-04-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2025-04-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2025-06-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2025-06-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2025-06-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2025-06-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2025-06-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2025-06-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2025-06-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2025-06-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-07-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-07-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2025-07-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-07-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2025-07-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2025-07-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2025-07-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2025-07-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-09-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-09-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2025-09-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2025-09-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-09-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2025-09-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2025-09-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2025-09-09",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-10-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2025-10-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2025-10-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2025-10-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2025-10-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2025-10-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2025-10-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2025-10-27",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-12-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-12-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2025-12-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2025-12-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2025-12-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2025-12-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2025-12-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TATASTEEL.NS",
+      "as_of": "2025-12-11",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-01-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-01-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2026-01-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-01-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-01-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "as_of": "2026-01-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-01-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2026-01-29",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2026-03-17",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2026-03-17",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-03-17",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "as_of": "2026-03-17",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-03-17",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2026-03-17",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2026-03-17",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2026-03-17",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2026-05-07",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-05-07",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2026-05-07",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-05-07",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2026-05-07",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2026-05-07",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2026-05-07",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-05-07",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2026-06-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "as_of": "2026-06-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-06-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2026-06-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-06-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2026-06-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2026-06-23",
+      "horizon_sessions": 21
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2026-06-23",
       "horizon_sessions": 21
     }
   ],
-  "exclusions": [
-    "2025-11-06: TATAMOTORS did not trade on NSE that day \u2014 excluded"
-  ],
+  "exclusions": [],
   "rules": [
     "FROZEN: do not edit this file after seeing results.",
     "Universe is point-in-time from the NSE bhavcopy, not today's index membership.",
