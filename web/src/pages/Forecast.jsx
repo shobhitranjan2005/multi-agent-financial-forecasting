@@ -10,7 +10,11 @@ const dark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches;
 
 export default function Forecast() {
   const [ticker, setTicker] = useState('RELIANCE.NS');
-  const [asOf, setAsOf] = useState('2025-06-02');
+  
+  // Format today's date as YYYY-MM-DD
+  const today = new Date().toLocaleDateString('en-CA');
+  const [asOf, setAsOf] = useState(today);
+  
   const [debateOn, setDebateOn] = useState(true);
   const { data, loading, error: dataErr } = useMarketData(ticker, asOf);
   const { isRunning, progress, logs, debate, forecast, error: streamErr, startForecast } = useForecastStream();
