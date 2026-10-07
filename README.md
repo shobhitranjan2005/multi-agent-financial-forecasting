@@ -80,25 +80,24 @@ cd web && npm install && npm run dev         # dashboard (API: uvicorn backend.a
 python -m scripts.warm_demo                # verify the demo replays from cache
 ```
 
-### Documents (regenerated from code and results)
-| Document | Command |
+### Documents
+| Document | Description |
 | :--- | :--- |
-| `docs/BTP_Engineering_Report.docx` | `python -m scripts.make_docx` |
-| `docs/BTP_Thesis_Report.docx` | `python -m scripts.make_thesis` |
-| `docs/BTP_Defence_Slides.pptx` | `python -m scripts.make_slides` |
-
-The thesis and slides read `results/` directly: anything not yet run is marked
-**PENDING** rather than filled with a placeholder number. Run the experiments,
-regenerate, and the tables fill themselves.
+| `docs/RESULTS_MAP.md` | Maps thesis claims to specific ablation results |
+| `docs/LIMITATIONS.md` | Core framework limitations for future BTP/MTP students |
+| `docs/FAILURES.md` | Qualitative analysis of high-confidence failures |
 
 ### When the API key arrives
 ```bash
-# 1. locate the training cutoff — do this FIRST, it underpins every other claim
+# 1. run the preflight gate to ensure environment and API are clean (cached)
+python -m evaluate preflight
+# 2. locate the training cutoff
 python -m evaluate recall-probe --start 2024-01-01 --end 2026-01-01
-# 2. run every configuration
+# 3. set LLM_MAX_RPM in .env if your tier supports more than 15 RPM (default 12)
+# 4. run every configuration (generates results/ files)
 python -m evaluate ablate --repeats 3
-# 3. regenerate the report and slides with real numbers
-python -m scripts.make_thesis && python -m scripts.make_slides
-# 4. the day before the defence
-python -m scripts.warm_demo
+# 5. build the qualitative failure browser
+python backend/eval/failures.py
+# 6. verify the demo frontend
+npm run dev --prefix web
 ```

@@ -74,3 +74,12 @@ main{padding:30px 34px;display:flex;flex-direction:column;gap:20px;max-width:118
 .exp-table td { border-bottom: 1px solid var(--line); padding: 14px 16px; color: var(--ink); }
 .exp-table tr:last-child td { border-bottom: none; }
 .exp-table b { font-weight: 600; }
+
+@media (max-width: 768px) {
+  .forecast-layout { grid-template-columns: 1fr; }
+  .top-nav { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+  .nav-links { flex-wrap: wrap; gap: 8px; }
+  .forecast-main { padding: 20px 16px; box-sizing: border-box; }
+  .experiments-main { padding: 20px 16px; box-sizing: border-box; }
+  .exp-table { display: block; overflow-x: auto; white-space: nowrap; }
+}

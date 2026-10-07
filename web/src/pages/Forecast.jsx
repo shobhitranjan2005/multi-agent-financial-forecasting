@@ -47,6 +47,10 @@ export default function Forecast() {
           <div><h2>{ticker}</h2><span>Evidence as of {asOf}</span></div>
           <span className="badge"><ShieldCheck size={14} /> No data after {asOf}</span>
         </div>
+        
+        <div style={{ background: 'rgba(234, 179, 8, 0.1)', color: '#ca8a04', padding: '10px 16px', borderRadius: '8px', fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ShieldCheck size={16} /> Demo forecast — not research evidence
+        </div>
 
         {(dataErr || streamErr) && <div className="err">{dataErr || streamErr}</div>}
 

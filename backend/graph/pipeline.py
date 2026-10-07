@@ -316,6 +316,23 @@ def _assemble_record(ctx, final_state, started, *, debate, dropped, nonce):
             f"{recon.get('n_magnitude_errors', 0)} magnitude errors"
         )
 
+    t_rep = final_state.get("technical_report")
+    f_rep = final_state.get("fundamental_report")
+    s_rep = final_state.get("sentiment_report")
+    m_rep = final_state.get("macro_report")
+    
+    specialist_signals = {
+        "technical": getattr(t_rep, "trend", None) if t_rep else None,
+        "fundamental": getattr(f_rep, "health", None) if f_rep else None,
+        "sentiment": getattr(s_rep, "polarity", None) if s_rep else None,
+        "macro": getattr(m_rep, "regime", None) if m_rep else None,
+    }
+    
+    evidence_flags = {
+        "has_news": bool(getattr(ctx.news, "headlines", None)),
+        "has_fundamentals": bool(getattr(ctx.fundamentals, "market_cap", None)),
+    }
+
     return ForecastRecord(
         ticker=ctx.ticker,
         as_of=str(ctx.as_of),
@@ -330,7 +347,9 @@ def _assemble_record(ctx, final_state, started, *, debate, dropped, nonce):
         parse_failures=usage.parse_failures,
         nonce=nonce,
         notes=notes,
-        transcript=final_state.get("transcript")
+        transcript=final_state.get("transcript"),
+        specialist_signals=specialist_signals,
+        evidence_flags=evidence_flags
     )
 
 

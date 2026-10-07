@@ -160,6 +160,7 @@ class ForecastRecord(BaseModel):
         "ticker", "as_of", "system", "last_close_inr", "forecast",
         "horizon_sessions", "target_date", "llm_calls", "total_tokens",
         "seconds", "parse_failures", "nonce", "notes", "transcript",
+        "specialist_signals", "evidence_flags"
     )
 
     ticker: str
@@ -176,3 +177,5 @@ class ForecastRecord(BaseModel):
     nonce: str
     notes: list[str]
     transcript: Optional[str] = None
+    specialist_signals: Optional[dict] = None
+    evidence_flags: Optional[dict] = None
