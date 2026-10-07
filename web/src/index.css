@@ -83,3 +83,33 @@ main{padding:30px 34px;display:flex;flex-direction:column;gap:20px;max-width:118
   .experiments-main { padding: 20px 16px; box-sizing: border-box; }
   .exp-table { display: block; overflow-x: auto; white-space: nowrap; }
 }
+
+/* Agent Command Center */
+.agent-matrix { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
+.agent-matrix h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mute); margin: 0 0 8px 0; font-weight: 600; }
+.agent-status { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; font-size: 0.88rem; color: var(--ink); background: var(--card); border: 1px solid var(--line); cursor: pointer; transition: all 0.2s; }
+.agent-status:hover { border-color: rgba(99,102,241,0.5); }
+.agent-status.active { background: rgba(99,102,241,0.1); border-color: var(--brand); }
+.status-indicator { width: 10px; height: 10px; border-radius: 50%; background: #475569; flex-shrink: 0; }
+.agent-status.running .status-indicator { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; animation: pulse 1.5s infinite; }
+.agent-status.done .status-indicator { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+/* Terminal UI */
+.terminal-ui { background: #1e1e1e !important; border: 1px solid #333 !important; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; margin-bottom: 20px; border-radius: 12px; }
+.terminal-header { background: #2d2d2d; padding: 10px 16px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #111; font-size: 0.75rem; color: #888; font-family: monospace; letter-spacing: 0.05em; }
+.term-dots { display: flex; gap: 6px; }
+.term-dots i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.term-dots i.r { background: #ff5f56; }
+.term-dots i.y { background: #ffbd2e; }
+.term-dots i.g { background: #27c93f; }
+.terminal-body { padding: 16px; height: 260px; overflow-y: auto; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.85rem; color: #e2e8f0; display: flex; flex-direction: column; gap: 8px; }
+.term-log { display: flex; gap: 8px; line-height: 1.4; word-break: break-word; }
+.term-log.running { color: #94a3b8; }
+.term-log.done { color: #f8fafc; }
+.term-agent { color: #38bdf8; font-weight: 600; white-space: nowrap; }
