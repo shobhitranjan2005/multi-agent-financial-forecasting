@@ -108,7 +108,12 @@ def _rate_limited(client_ip: str, path: str) -> bool:
 
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
-    client_ip = request.client.host if request.client else "unknown"
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        client_ip = forwarded.split(",")[0].strip()
+    else:
+        client_ip = request.client.host if request.client else "unknown"
+
     if request.url.path.startswith("/api/") and _rate_limited(client_ip, request.url.path):
         return JSONResponse(
             status_code=429,
@@ -408,3 +413,16 @@ def get_result(filename: str) -> dict:
     if filename.endswith(".json"):
         return {"content": json.loads(content)}
     return {"content": content}
+
+
+@app.get("/api/demo")
+def get_demo() -> dict:
+    """Serve a cached, known-good run with zero live API calls."""
+    from backend.eval.harness import RESULTS_DIR
+    import json
+    
+    demo_file = RESULTS_DIR / "demo" / "sample.json"
+    if not demo_file.exists():
+        raise HTTPException(status_code=404, detail="Demo run not found")
+        
+    return json.loads(demo_file.read_text(encoding="utf-8"))

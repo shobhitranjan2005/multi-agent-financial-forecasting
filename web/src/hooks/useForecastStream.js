@@ -3,6 +3,7 @@ import { useState, useCallback, useRef } from 'react';
 export function useForecastStream() {
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [stageStatus, setStageStatus] = useState({});
   const [logs, setLogs] = useState([]);
   const [debate, setDebate] = useState(null);
   const [forecast, setForecast] = useState(null);
@@ -12,6 +13,7 @@ export function useForecastStream() {
   const startForecast = useCallback((ticker, asOf, debateEnabled, drop) => {
     setIsRunning(true);
     setProgress(0);
+    setStageStatus({});
     setLogs([]);
     setDebate(null);
     setForecast(null);
@@ -38,8 +40,10 @@ export function useForecastStream() {
         if (data.status === 'done') {
           doneStages += 1;
           setProgress((doneStages / totalStages) * 100);
+          setStageStatus(prev => ({ ...prev, [data.stage]: 'done' }));
           setLogs(prev => [...prev, `[DONE] ${label} - ${data.detail} (${data.elapsed}s)`]);
         } else {
+          setStageStatus(prev => ({ ...prev, [data.stage]: 'running' }));
           setLogs(prev => [...prev, `[RUNNING] ${label}...`]);
         }
       } else if (data.event === 'done') {
@@ -48,7 +52,7 @@ export function useForecastStream() {
         setDebate(data.debate);
         setForecast(data.record?.forecast);
       } else if (data.event === 'error') {
-        setError(data.detail);
+        setError(data.detail || 'Unknown error');
         setIsRunning(false);
       }
     };
@@ -69,5 +73,5 @@ export function useForecastStream() {
     }
   }, []);
 
-  return { isRunning, progress, logs, debate, forecast, error, startForecast, stopForecast };
+  return { isRunning, progress, stageStatus, logs, debate, forecast, error, startForecast, stopForecast };
 }

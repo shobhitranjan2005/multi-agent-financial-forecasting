@@ -4,9 +4,19 @@ import { Search, TrendingUp, TrendingDown, Minus, Check, Loader2, Info } from 'l
 import { useMarketData } from '../hooks/useMarketData';
 import { useForecastStream } from '../hooks/useForecastStream';
 
-const STOCKS = [['RELIANCE', 'Reliance Industries'], ['TCS', 'TCS'], ['HDFCBANK', 'HDFC Bank'], ['INFY', 'Infosys'], ['ICICIBANK', 'ICICI Bank'], ['SBIN', 'State Bank of India'], ['BHARTIARTL', 'Bharti Airtel'], ['ITC', 'ITC'], ['LT', 'Larsen & Toubro'], ['MARUTI', 'Maruti Suzuki'], ['TITAN', 'Titan'], ['WIPRO', 'Wipro']];
+const STOCKS = [
+  ['RELIANCE', 'Reliance Industries'], ['TCS', 'Tata Consultancy Services'], ['HDFCBANK', 'HDFC Bank'], ['INFY', 'Infosys'],
+  ['ICICIBANK', 'ICICI Bank'], ['HINDUNILVR', 'Hindustan Unilever'], ['ITC', 'ITC'], ['SBIN', 'State Bank of India'],
+  ['BHARTIARTL', 'Bharti Airtel'], ['KOTAKBANK', 'Kotak Mahindra Bank'], ['LT', 'Larsen & Toubro'], ['AXISBANK', 'Axis Bank'],
+  ['ASIANPAINT', 'Asian Paints'], ['MARUTI', 'Maruti Suzuki'], ['SUNPHARMA', 'Sun Pharma'], ['TITAN', 'Titan'],
+  ['ULTRACEMCO', 'UltraTech Cement'], ['WIPRO', 'Wipro'], ['NESTLEIND', 'Nestle India'], ['TATASTEEL', 'Tata Steel'],
+  ['JSWSTEEL', 'JSW Steel'], ['POWERGRID', 'Power Grid Corp'], ['NTPC', 'NTPC'], ['ONGC', 'ONGC'],
+  ['HCLTECH', 'HCL Technologies'], ['TECHM', 'Tech Mahindra'], ['BAJFINANCE', 'Bajaj Finance'], ['CIPLA', 'Cipla'],
+  ['DRREDDY', "Dr. Reddy's Labs"]
+];
 const NAME = Object.fromEntries(STOCKS);
 const STEPS = ['Reading price charts', 'Checking company health', 'Scanning the news', 'Reviewing the economy', 'Fact-checking the numbers', 'Bulls and bears debate', 'Making the final call'];
+const STEP_KEYS = ['technical', 'fundamental', 'sentiment', 'macro', 'reconcile', 'debate', 'risk_officer'];
 const VIEW = { buy: { Icon: TrendingUp, line: 'We expect the price to rise over the next month.' }, sell: { Icon: TrendingDown, line: 'We expect the price to fall over the next month.' }, hold: { Icon: Minus, line: 'We expect little change over the next month.' } };
 const inr = (v) => (v == null || isNaN(v) ? '—' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(v));
 const base = (t) => t.replace(/\.(NS|BO)$/, '');
@@ -15,6 +25,7 @@ const trendWord = (b) => (!b ? 'Not available' : /bull|up|positive/i.test(b) ? '
 const confWord = (p) => (p >= 70 ? 'High' : p >= 45 ? 'Medium' : 'Low');
 const cite = (c) => (typeof c === 'string' ? { text: c } : { text: c.title || c.source || c.label || 'Source', url: c.url || c.link });
 const lastWeekday = () => { const d = new Date(); do { d.setDate(d.getDate() - 1); } while ([0, 6].includes(d.getDay())); return d.toLocaleDateString('en-CA'); };
+
 function useDark() {
   const q = window.matchMedia?.('(prefers-color-scheme: dark)');
   const [d, setD] = useState(!!q?.matches);
@@ -28,14 +39,18 @@ export default function Forecast({ research }) {
   const [asOf, setAsOf] = useState(lastWeekday());
   const [debateOn, setDebateOn] = useState(true);
   const isDark = useDark();
+  const [demoForecast, setDemoForecast] = useState(null);
+  
   const { data, loading, error: dataErr } = useMarketData(ticker, asOf);
-  const { isRunning, progress, logs, debate, forecast, error: streamErr, startForecast } = useForecastStream();
+  const { isRunning, progress, stageStatus, logs, debate, forecast: streamForecast, error: streamErr, startForecast } = useForecastStream();
 
+  const forecast = demoForecast || streamForecast;
   const ev = data?.evidence, candles = data?.price?.candles;
   const hits = q.trim() ? STOCKS.filter(([s, n]) => (s + n).toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6) : [];
-  const pick = (s) => { setTicker(s.includes('.') ? s : `${s}.NS`); setQ(''); };
+  const pick = (s) => { setTicker(s.includes('.') ? s : `${s}.NS`); setQ(''); setDemoForecast(null); };
+  
   const steps = debateOn ? STEPS : STEPS.filter((_, i) => i !== 5);
-  const done = Math.round((progress / 100) * steps.length);
+  const stepKeys = debateOn ? STEP_KEYS : STEP_KEYS.filter((_, i) => i !== 5);
   const sig = forecast?.signal?.toLowerCase();
   const V = VIEW[sig];
   const grid = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
@@ -45,6 +60,47 @@ export default function Forecast({ research }) {
   const last = candles?.[candles.length - 1]?.date;
   const proj = forecast && last ? (() => { const e = new Date(last); e.setDate(e.getDate() + 30); return e.toISOString().slice(0, 10); })() : null;
 
+  const handleStartForecast = () => {
+    setDemoForecast(null);
+    startForecast(ticker, asOf, debateOn, []);
+  };
+
+  const loadDemo = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/demo');
+      if (!res.ok) throw new Error('Demo not available');
+      const data = await res.json();
+      setTicker(data.context?.ticker || 'RELIANCE.NS');
+      setAsOf(data.context?.as_of || lastWeekday());
+      setDemoForecast(data.record?.forecast);
+    } catch (e) {
+      console.error(e);
+      alert('Demo run is not available. Generate it first.');
+    }
+  };
+
+  const renderError = () => {
+    if (!err) return null;
+    const strErr = String(err).toLowerCase();
+    let msg = "We couldn't complete that. Please check the company name and try again.";
+    
+    if (strErr.includes('quota') || strErr.includes('rate limit') || strErr.includes('429')) {
+      msg = "The analysts are busy, try again in a minute.";
+    } else if (strErr.includes('closed') || strErr.includes('no price data')) {
+      msg = "The market was closed or no data was available for that date.";
+    } else if (strErr.includes('failed to fetch') || strErr.includes('websocket connection error') || strErr.includes('502')) {
+      msg = "The backend is offline or unreachable.";
+    } else if (strErr.includes('unsupported ticker') || strErr.includes('unsupported market')) {
+      msg = "We couldn't find that company. We currently support Indian equities (NSE/BSE).";
+    }
+
+    return (
+      <div className="err" role="alert">{msg}{research && <small> {String(err)}</small>}
+        <button onClick={handleStartForecast}>Try again</button>
+      </div>
+    );
+  };
+
   return (
     <div className="page">
       <section className="hero">
@@ -53,7 +109,7 @@ export default function Forecast({ research }) {
         <div className="search">
           <Search size={18} />
           <input aria-label="Search company or symbol" placeholder="Search a company, e.g. Infosys" value={q} onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) pick(hits[0]?.[0] || q.trim().toUpperCase()); }} />
+            onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) { if (hits.length) pick(hits[0][0]); else pick(q.trim().toUpperCase()); } }} />
           {hits.length > 0 && <ul className="sug">{hits.map(([s, n]) => <li key={s}><button onClick={() => pick(s)}>{n}<small>{s}</small></button></li>)}</ul>}
         </div>
         <div className="chips">{STOCKS.slice(0, 8).map(([s, n]) => <button key={s} className={`chip ${base(ticker) === s ? 'on' : ''}`} onClick={() => pick(s)}>{n}</button>)}</div>
@@ -67,13 +123,17 @@ export default function Forecast({ research }) {
 
       <div className="titlerow">
         <div><h2>{NAME[base(ticker)] || base(ticker)}</h2><span>{base(ticker)} · NSE</span></div>
-        <button className="go" disabled={isRunning} onClick={() => startForecast(ticker, asOf, debateOn, [])}>
-          {isRunning ? <><Loader2 size={17} className="spin" /> Analysing…</> : 'Get forecast'}
-        </button>
+        <div>
+          <button className="demo-btn" disabled={isRunning} onClick={loadDemo} style={{marginRight: '12px', background: 'transparent', border: '1px solid currentColor', color: 'inherit'}}>
+            See a sample forecast
+          </button>
+          <button className="go" disabled={isRunning} onClick={handleStartForecast}>
+            {isRunning ? <><Loader2 size={17} className="spin" /> Analysing…</> : 'Get forecast'}
+          </button>
+        </div>
       </div>
 
-      {err && <div className="err" role="alert">We couldn’t complete that. Please check the company name and try again.{research && <small> {String(err)}</small>}
-        <button onClick={() => startForecast(ticker, asOf, debateOn, [])}>Try again</button></div>}
+      {renderError()}
 
       {loading && !ev && <div className="skel"><i /><i /><i /></div>}
       {ev && (
@@ -94,8 +154,17 @@ export default function Forecast({ research }) {
 
       {(isRunning || logs.length > 0) && (
         <div className="card"><h3>What our analysts are doing</h3>
-          <ol className="steps">{steps.map((s, i) => <li key={s} className={i < done ? 'ok' : i === done && isRunning ? 'now' : ''}>
-            {i < done ? <Check size={16} /> : i === done && isRunning ? <Loader2 size={16} className="spin" /> : <span className="dot" />}{s}</li>)}</ol>
+          <ol className="steps">{steps.map((s, i) => {
+            const key = stepKeys[i];
+            const isOk = stageStatus?.[key] === 'done';
+            const isNow = stageStatus?.[key] === 'running';
+            return (
+              <li key={s} className={isOk ? 'ok' : isNow ? 'now' : ''}>
+                {isOk ? <Check size={16} /> : isNow ? <Loader2 size={16} className="spin" /> : <span className="dot" />}
+                {s}
+              </li>
+            );
+          })}</ol>
           {research && <details><summary>Technical log</summary><pre className="log">{logs.join('\n')}</pre></details>}
         </div>
       )}
@@ -133,6 +202,9 @@ export default function Forecast({ research }) {
         <div className="card"><h3>Recent news we looked at</h3><ul className="src">{ev.news.headlines.slice(0, 5).map((h, i) => <li key={i}>{h.title || h}</li>)}</ul></div>
       )}
       {!forecast && !isRunning && <p className="hint"><Info size={14} /> Press “Get forecast” and wait about a minute while the analysts work.</p>}
+      <footer style={{ marginTop: '3rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem', textAlign: 'center', opacity: 0.7, fontSize: '0.85rem' }}>
+        AI-generated research estimate, not investment advice.
+      </footer>
     </div>
   );
 }
