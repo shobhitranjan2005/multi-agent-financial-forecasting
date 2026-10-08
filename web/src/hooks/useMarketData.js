@@ -34,9 +34,8 @@ export function useMarketData(ticker, asOf) {
       }
     };
 
-    fetchData();
-
-    return () => { isMounted = false; };
+    const timer = setTimeout(fetchData, 600); // debounce: don't hit Yahoo/NSE per keystroke
+    return () => { isMounted = false; clearTimeout(timer); };
   }, [ticker, asOf]);
 
   return { data, loading, error };

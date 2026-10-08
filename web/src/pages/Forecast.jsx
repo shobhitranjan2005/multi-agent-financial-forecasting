@@ -1,197 +1,138 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
-import { Play, ShieldCheck, TrendingUp, Loader2 } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Minus, Check, Loader2, Info } from 'lucide-react';
 import { useMarketData } from '../hooks/useMarketData';
 import { useForecastStream } from '../hooks/useForecastStream';
 
-const PRESETS = ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'SBIN.NS', 'MARUTI.NS'];
+const STOCKS = [['RELIANCE', 'Reliance Industries'], ['TCS', 'TCS'], ['HDFCBANK', 'HDFC Bank'], ['INFY', 'Infosys'], ['ICICIBANK', 'ICICI Bank'], ['SBIN', 'State Bank of India'], ['BHARTIARTL', 'Bharti Airtel'], ['ITC', 'ITC'], ['LT', 'Larsen & Toubro'], ['MARUTI', 'Maruti Suzuki'], ['TITAN', 'Titan'], ['WIPRO', 'Wipro']];
+const NAME = Object.fromEntries(STOCKS);
+const STEPS = ['Reading price charts', 'Checking company health', 'Scanning the news', 'Reviewing the economy', 'Fact-checking the numbers', 'Bulls and bears debate', 'Making the final call'];
+const VIEW = { buy: { Icon: TrendingUp, line: 'We expect the price to rise over the next month.' }, sell: { Icon: TrendingDown, line: 'We expect the price to fall over the next month.' }, hold: { Icon: Minus, line: 'We expect little change over the next month.' } };
 const inr = (v) => (v == null || isNaN(v) ? '—' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(v));
-const dark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-const getFutureDateStr = (dateStr, days) => {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
-};
+const base = (t) => t.replace(/\.(NS|BO)$/, '');
+const rsiWord = (v) => (v == null ? 'Not available' : v < 30 ? 'Cheap (oversold)' : v > 70 ? 'Overheated' : 'Normal');
+const trendWord = (b) => (!b ? 'Not available' : /bull|up|positive/i.test(b) ? 'Rising' : /bear|down|negative/i.test(b) ? 'Falling' : 'Flat');
+const confWord = (p) => (p >= 70 ? 'High' : p >= 45 ? 'Medium' : 'Low');
+const cite = (c) => (typeof c === 'string' ? { text: c } : { text: c.title || c.source || c.label || 'Source', url: c.url || c.link });
+const lastWeekday = () => { const d = new Date(); do { d.setDate(d.getDate() - 1); } while ([0, 6].includes(d.getDay())); return d.toLocaleDateString('en-CA'); };
+function useDark() {
+  const q = window.matchMedia?.('(prefers-color-scheme: dark)');
+  const [d, setD] = useState(!!q?.matches);
+  useEffect(() => { if (!q) return; const f = (e) => setD(e.matches); q.addEventListener('change', f); return () => q.removeEventListener('change', f); }, []);
+  return d;
+}
 
-const AGENTS = [
-  { id: 'technical', name: 'Technical Analyst' },
-  { id: 'fundamental', name: 'Fundamental Analyst' },
-  { id: 'sentiment', name: 'Sentiment Analyst' },
-  { id: 'macro', name: 'Macro Analyst' },
-  { id: 'debate', name: 'Adversarial Debate Engine' },
-  { id: 'final', name: 'Chief Risk Officer' }
-];
-
-export default function Forecast() {
+export default function Forecast({ research }) {
   const [ticker, setTicker] = useState('RELIANCE.NS');
-  
-  // Format today's date as YYYY-MM-DD
-  const today = new Date().toLocaleDateString('en-CA');
-  const [asOf, setAsOf] = useState(today);
-  
+  const [q, setQ] = useState('');
+  const [asOf, setAsOf] = useState(lastWeekday());
   const [debateOn, setDebateOn] = useState(true);
-  const [activeAgent, setActiveAgent] = useState(null);
-  const terminalRef = useRef(null);
-
+  const isDark = useDark();
   const { data, loading, error: dataErr } = useMarketData(ticker, asOf);
   const { isRunning, progress, logs, debate, forecast, error: streamErr, startForecast } = useForecastStream();
-  const ev = data?.evidence;
-  const candles = data?.price?.candles;
-  const fg = dark() ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+
+  const ev = data?.evidence, candles = data?.price?.candles;
+  const hits = q.trim() ? STOCKS.filter(([s, n]) => (s + n).toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6) : [];
+  const pick = (s) => { setTicker(s.includes('.') ? s : `${s}.NS`); setQ(''); };
+  const steps = debateOn ? STEPS : STEPS.filter((_, i) => i !== 5);
+  const done = Math.round((progress / 100) * steps.length);
   const sig = forecast?.signal?.toLowerCase();
-
-  useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-    }
-  }, [logs]);
-
-  const getAgentState = (agentId) => {
-    const searchId = agentId === 'final' ? 'final' : agentId;
-    const doneLog = logs.find(l => l.toLowerCase().includes(`[done] ${searchId}`));
-    if (doneLog) return 'done';
-    const runningLog = logs.find(l => l.toLowerCase().includes(`[running] ${searchId}`));
-    if (runningLog) return 'running';
-    return 'waiting';
-  };
-
-  const terminalLogs = logs.filter(l => {
-    if (!activeAgent) return true;
-    return l.toLowerCase().includes(activeAgent);
-  });
-
-  const targetShapes = forecast ? [{
-    type: 'rect',
-    xref: 'x', yref: 'y',
-    x0: asOf,
-    x1: getFutureDateStr(asOf, 30),
-    y0: forecast.target_low_inr,
-    y1: forecast.target_high_inr,
-    fillcolor: 'rgba(99, 102, 241, 0.15)',
-    line: { color: 'rgba(99, 102, 241, 0.5)', width: 1, dash: 'dot' }
-  }] : [];
+  const V = VIEW[sig];
+  const grid = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
+  const bulls = (debate || []).filter((t) => t.position === 'bull'), bears = (debate || []).filter((t) => t.position === 'bear');
+  const err = dataErr || streamErr;
+  const price = ev?.last_close;
+  const last = candles?.[candles.length - 1]?.date;
+  const proj = forecast && last ? (() => { const e = new Date(last); e.setDate(e.getDate() + 30); return e.toISOString().slice(0, 10); })() : null;
 
   return (
-    <div className="forecast-layout">
-      <aside className="side">
-        <label>Ticker</label>
-        <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} />
-        <div className="chips">{PRESETS.map((p) => <button key={p} className="chip" onClick={() => setTicker(p)}>{p.replace('.NS', '')}</button>)}</div>
-
-        <label>As-of date</label>
-        <input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
-
-        <div className="switch" onClick={() => setDebateOn(!debateOn)}>
-          <div>Bull–Bear debate<small>Turn off for the ablation</small></div>
-          <div className={`tog ${debateOn ? 'on' : ''}`} />
+    <div className="page">
+      <section className="hero">
+        <h1>Should you buy, hold or sell?</h1>
+        <p>Pick an Indian stock. Our team of AI analysts reviews the price, the company, the news and the economy, then gives a clear view.</p>
+        <div className="search">
+          <Search size={18} />
+          <input aria-label="Search company or symbol" placeholder="Search a company, e.g. Infosys" value={q} onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) pick(hits[0]?.[0] || q.trim().toUpperCase()); }} />
+          {hits.length > 0 && <ul className="sug">{hits.map(([s, n]) => <li key={s}><button onClick={() => pick(s)}>{n}<small>{s}</small></button></li>)}</ul>}
         </div>
+        <div className="chips">{STOCKS.slice(0, 8).map(([s, n]) => <button key={s} className={`chip ${base(ticker) === s ? 'on' : ''}`} onClick={() => pick(s)}>{n}</button>)}</div>
+        {research && (
+          <div className="rbar">
+            <label>As-of date <input type="date" max={new Date().toLocaleDateString('en-CA')} value={asOf} onChange={(e) => setAsOf(e.target.value)} /></label>
+            <label><input type="checkbox" checked={debateOn} onChange={(e) => setDebateOn(e.target.checked)} /> Bull–Bear debate</label>
+          </div>
+        )}
+      </section>
 
-        <button className="run" disabled={isRunning} onClick={() => startForecast(ticker, asOf, debateOn, [])}>
-          {isRunning ? <><Loader2 size={17} className="spin" /> Analysing…</> : <><Play size={16} /> Run forecast</>}
+      <div className="titlerow">
+        <div><h2>{NAME[base(ticker)] || base(ticker)}</h2><span>{base(ticker)} · NSE</span></div>
+        <button className="go" disabled={isRunning} onClick={() => startForecast(ticker, asOf, debateOn, [])}>
+          {isRunning ? <><Loader2 size={17} className="spin" /> Analysing…</> : 'Get forecast'}
         </button>
+      </div>
 
-        <div className="agent-matrix">
-          <h4>Agent Command Center</h4>
-          {AGENTS.filter(a => debateOn || a.id !== 'debate').map(agent => (
-            <div 
-              key={agent.id} 
-              className={`agent-status ${getAgentState(agent.id)} ${activeAgent === agent.id ? 'active' : ''}`} 
-              onClick={() => setActiveAgent(activeAgent === agent.id ? null : agent.id)}
-            >
-              <span className="status-indicator"></span>
-              {agent.name}
-            </div>
-          ))}
+      {err && <div className="err" role="alert">We couldn’t complete that. Please check the company name and try again.{research && <small> {String(err)}</small>}
+        <button onClick={() => startForecast(ticker, asOf, debateOn, [])}>Try again</button></div>}
+
+      {loading && !ev && <div className="skel"><i /><i /><i /></div>}
+      {ev && (
+        <div className="kpis">
+          <div className="kpi"><small>Latest price</small><b>{inr(price)}</b></div>
+          <div className="kpi"><small>Price momentum</small><b>{rsiWord(ev.indicators?.rsi_14?.value)}</b></div>
+          <div className="kpi"><small>Recent trend</small><b>{trendWord(ev.indicators?.macd?.bias)}</b></div>
+          <div className="kpi"><small>Vs Nifty 50 (1 month)</small><b>{ev.benchmark?.return_21d_pct != null ? `${ev.benchmark.return_21d_pct > 0 ? '+' : ''}${ev.benchmark.return_21d_pct}%` : '—'}</b></div>
         </div>
-      </aside>
-
-      <main className="forecast-main">
-        <div className="head">
-          <div><h2>{ticker}</h2><span>Evidence as of {asOf}</span></div>
-          <span className="badge"><ShieldCheck size={14} /> No data after {asOf}</span>
+      )}
+      {candles && (
+        <div className="card"><h3>Price history{proj && ' · shaded area = our likely range for the next month'}</h3>
+          <Plot data={[{ type: 'candlestick', x: candles.map((c) => c.date), open: candles.map((c) => c.open), high: candles.map((c) => c.high), low: candles.map((c) => c.low), close: candles.map((c) => c.close), increasing: { line: { color: '#10b981' } }, decreasing: { line: { color: '#ef4444' } } }]}
+            layout={{ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { color: isDark ? '#e8ecf7' : '#0f172a', family: 'Inter' }, margin: { t: 6, l: 46, r: 8, b: 28 }, height: 320, shapes: proj ? [{ type: 'rect', xref: 'x', yref: 'y', x0: last, x1: proj, y0: forecast.target_low_inr, y1: forecast.target_high_inr, fillcolor: 'rgba(99,102,241,.28)', line: { width: 0 } }] : [], xaxis: { rangeslider: { visible: false }, gridcolor: grid, ...(proj ? { range: [candles[Math.max(0, candles.length - 90)].date, proj] } : {}) }, yaxis: { gridcolor: grid } }}
+            config={{ displayModeBar: false, responsive: true }} useResizeHandler style={{ width: '100%' }} />
         </div>
+      )}
 
-        {(dataErr || streamErr) && <div className="err">{dataErr || streamErr}</div>}
+      {(isRunning || logs.length > 0) && (
+        <div className="card"><h3>What our analysts are doing</h3>
+          <ol className="steps">{steps.map((s, i) => <li key={s} className={i < done ? 'ok' : i === done && isRunning ? 'now' : ''}>
+            {i < done ? <Check size={16} /> : i === done && isRunning ? <Loader2 size={16} className="spin" /> : <span className="dot" />}{s}</li>)}</ol>
+          {research && <details><summary>Technical log</summary><pre className="log">{logs.join('\n')}</pre></details>}
+        </div>
+      )}
 
-        {ev && (!activeAgent || activeAgent !== 'sentiment') && (
-          <div className="kpis">
-            <div className="kpi"><small>Last close</small><b>{inr(ev.last_close)}</b></div>
-            <div className="kpi"><small>RSI (14)</small><b>{ev.indicators?.rsi_14?.value ?? 'N/A'}</b></div>
-            <div className="kpi"><small>MACD bias</small><b style={{ textTransform: 'capitalize' }}>{ev.indicators?.macd?.bias ?? 'N/A'}</b></div>
-            <div className="kpi"><small>21d vs NIFTY</small><b>{ev.benchmark?.return_21d_pct ?? 'N/A'}%</b></div>
+      {forecast && V && (
+        <div className="result">
+          <div className={`sig ${sig}`}>
+            <V.Icon size={34} aria-hidden="true" />
+            <div className="w">{forecast.signal}</div>
+            <p>{V.line}</p>
+            <div className="rng"><small>Likely price range</small>{inr(forecast.target_low_inr)} – {inr(forecast.target_high_inr)}</div>
+            <div className="conf" role="img" aria-label={`Confidence ${forecast.confidence_pct}%`}><i style={{ width: `${forecast.confidence_pct ?? 0}%` }} /></div>
+            <small>{confWord(forecast.confidence_pct)} confidence ({forecast.confidence_pct ?? '—'}%)</small>
           </div>
-        )}
-
-        {candles && (!activeAgent || activeAgent === 'technical' || activeAgent === 'final') && (
-          <div className="card">
-            <h3><TrendingUp size={13} style={{ verticalAlign: -2 }} /> Price history {forecast && '(+ 21d Target Projection)'}</h3>
-            <Plot
-              data={[{ type: 'candlestick', x: candles.map((c) => c.date), open: candles.map((c) => c.open), high: candles.map((c) => c.high), low: candles.map((c) => c.low), close: candles.map((c) => c.close), increasing: { line: { color: '#10b981' } }, decreasing: { line: { color: '#ef4444' } } }]}
-              layout={{ shapes: targetShapes, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { color: dark() ? '#e8ecf7' : '#0f172a', family: 'Inter' }, margin: { t: 6, l: 46, r: 8, b: 28 }, height: 330, xaxis: { rangeslider: { visible: false }, gridcolor: fg }, yaxis: { gridcolor: fg } }}
-              config={{ displayModeBar: false, responsive: true }} useResizeHandler style={{ width: '100%' }} />
+          <div className="card"><h3>Why we think so</h3><p className="reason">{forecast.reasoning}</p>
+            {forecast.key_risks?.length > 0 && <><h3 style={{ marginTop: 18 }}>What could go wrong</h3>
+              <ul className="risks">{forecast.key_risks.map((r, i) => <li key={i}>{typeof r === 'string' ? r : JSON.stringify(r)}</li>)}</ul></>}
           </div>
-        )}
-        
-        {loading && !data && <div className="empty">Loading evidence…</div>}
+        </div>
+      )}
 
-        {(isRunning || logs.length > 0) && (
-          <div className="terminal-ui card">
-            <div className="terminal-header">
-              <div className="term-dots"><i className="r"></i><i className="y"></i><i className="g"></i></div>
-              <span>Live Reasoning Trace {activeAgent ? `[FILTERED: ${activeAgent.toUpperCase()}]` : ''}</span>
-            </div>
-            <div className="terminal-body" ref={terminalRef}>
-              {terminalLogs.map((log, i) => {
-                const match = log.match(/\[(.*?)\] (.*?) - (.*)/) || log.match(/\[(.*?)\] (.*?)\.\.\./);
-                if (match) {
-                  const [, status, agent, msg] = match;
-                  return (
-                    <div key={i} className={`term-log ${status.toLowerCase()}`}>
-                      <span className="term-agent">[{agent.toUpperCase()}]:</span> {msg || 'Processing...'}
-                    </div>
-                  );
-                }
-                return <div key={i} className="term-log">{log}</div>;
-              })}
-            </div>
+      {(bulls.length > 0 || bears.length > 0) && (
+        <div className="card"><h3>Both sides of the argument</h3>
+          <div className="debate">
+            <div className="turn bull"><h4>The case for buying</h4>{bulls.map((t, i) => <ul key={i}>{t.points?.map((p, j) => <li key={j}>{p}</li>)}</ul>)}</div>
+            <div className="turn bear"><h4>The case against</h4>{bears.map((t, i) => <ul key={i}>{t.points?.map((p, j) => <li key={j}>{p}</li>)}</ul>)}</div>
           </div>
-        )}
+        </div>
+      )}
 
-        {forecast && (!activeAgent || activeAgent === 'final') && (
-          <div className="result">
-            <div className={`sig ${sig}`}>
-              <div className="w">{forecast.signal}</div>
-              <div className="rng">{inr(forecast.target_low_inr)} – {inr(forecast.target_high_inr)}</div>
-              <div className="conf"><i style={{ width: `${forecast.confidence_pct ?? 0}%` }} /></div>
-              <small>Confidence {forecast.confidence_pct ?? '—'}% · expects {forecast.expected_direction}</small>
-            </div>
-            <div className="card">
-              <h3>Reasoning</h3>
-              <p className="reason">{forecast.reasoning}</p>
-              {forecast.key_risks?.length > 0 && <div className="risks">{forecast.key_risks.map((r, i) => <span key={i} className="risk">{typeof r === 'string' ? r : JSON.stringify(r)}</span>)}</div>}
-            </div>
-          </div>
-        )}
-
-        {debate?.length > 0 && (!activeAgent || activeAgent === 'debate') && (
-          <div className="card">
-            <h3>Bull vs Bear debate</h3>
-            <div className="debate">
-              {debate.map((t, i) => (
-                <div key={i} className={`turn ${t.position}`}>
-                  <h4>Round {t.round_number} · {t.position === 'bull' ? '🐂 Bull' : '🐻 Bear'}</h4>
-                  <ul>{t.points?.map((p, j) => <li key={j}>{p}</li>)}</ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {ev?.news?.headlines?.length > 0 && (!activeAgent || activeAgent === 'sentiment') && (
-          <div className="card news"><h3>Headlines up to {asOf}</h3>{ev.news.headlines.slice(0, 5).map((h, i) => <div key={i}>{h.title || h}</div>)}</div>
-        )}
-        {!forecast && !isRunning && !candles && !loading && <div className="empty">Pick a ticker and date, then run a forecast.</div>}
-      </main>
+      {forecast?.citations?.length > 0 && (
+        <div className="card"><h3>Where this comes from</h3><ul className="src">{forecast.citations.slice(0, 8).map((c, i) => { const x = cite(c); return <li key={i}>{x.url ? <a href={x.url} target="_blank" rel="noreferrer">{x.text}</a> : x.text}</li>; })}</ul></div>
+      )}
+      {ev?.news?.headlines?.length > 0 && (
+        <div className="card"><h3>Recent news we looked at</h3><ul className="src">{ev.news.headlines.slice(0, 5).map((h, i) => <li key={i}>{h.title || h}</li>)}</ul></div>
+      )}
+      {!forecast && !isRunning && <p className="hint"><Info size={14} /> Press “Get forecast” and wait about a minute while the analysts work.</p>}
     </div>
   );
 }

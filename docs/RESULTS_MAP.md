@@ -1,12 +1,12 @@
-# Multi-Agent Financial Forecasting: Results Map
+# Results map
 
-This document serves as the central directory mapping the key claims of the thesis to the exact artifacts, commits, and reproduction commands that validate them.
+**Status: no valid research results exist yet.** The only runs so far are 5-case pipeline smoke tests, quarantined in `results/pilot_contaminated/`.
 
-| Thesis Claim | Result File | Git Commit | Command to Reproduce |
+| Thesis question | Evidence file | Commit | Status |
 | :--- | :--- | :--- | :--- |
-| **Claim 1: The Multi-Agent System performs similarly to a Single-LLM baseline** | `results/ablation_*.md` | `HEAD` | `python -m evaluate ablate` |
-| **Claim 2: The Bull/Bear debate stage does not justify its cost** | `results/ablation_*.md` | `HEAD` | `python -m evaluate ablate` |
-| **Claim 3: The Macro Specialist is the only agent contributing unique predictive value** | `results/ablation_*.md` | `HEAD` | `python -m evaluate ablate` |
-| **Claim 4: Qualitative Failures are driven by data availability and fundamental bias** | `results/failures_*.md` | `HEAD` | `python backend/eval/failures.py` |
+| Multi-agent vs single-LLM vs naive: accuracy, calibration | _pending_ | _pending_ | Not run on a clean, post-cutoff, frozen test set |
+| Debate vs no-debate | _pending_ | _pending_ | Not run |
+| Leave-one-specialist-out ablations | _pending_ | _pending_ | Not run |
+| Cost / latency / tokens | _pending_ | _pending_ | Needs uncached cost runs |
 
-*Note: Due to API rate limiting and compute constraints, final 160-case runs must be executed by the researcher prior to submitting the thesis.*
+Rows are filled in only from committed files in `results/`, with n and confidence intervals. A null result is a valid finding.

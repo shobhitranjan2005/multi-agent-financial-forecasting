@@ -328,10 +328,7 @@ def _assemble_record(ctx, final_state, started, *, debate, dropped, nonce):
         "macro": getattr(m_rep, "regime", None) if m_rep else None,
     }
     
-    evidence_flags = {
-        "has_news": bool(getattr(ctx.news, "headlines", None)),
-        "has_fundamentals": bool(getattr(ctx.fundamentals, "market_cap", None)),
-    }
+    evidence_flags = _evidence_flags(ctx)
 
     return ForecastRecord(
         ticker=ctx.ticker,
@@ -513,3 +510,17 @@ def _stage_detail(node_name: str, payload: dict) -> str:
         final = payload.get("final")
         return f"{final.signal}, {final.confidence_pct:.0f}% confidence" if final else "failed"
     return ""
+
+
+def _has_values(d) -> bool:
+    if isinstance(d, dict):
+        return any(_has_values(v) for v in d.values())
+    if isinstance(d, (list, tuple)):
+        return any(_has_values(v) for v in d)
+    return d is not None and d != ""
+
+
+def _evidence_flags(ctx) -> dict:
+    """ctx.news / ctx.fundamentals are DICTS (getattr on a dict is always None)."""
+    return {"has_news": bool((ctx.news or {}).get("headlines")),
+            "has_fundamentals": _has_values(ctx.fundamentals)}

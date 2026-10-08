@@ -1,0 +1,934 @@
+diff --git a/backend/graph/pipeline.py b/backend/graph/pipeline.py
+index cd005e8..0ce1204 100644
+--- a/backend/graph/pipeline.py
++++ b/backend/graph/pipeline.py
+@@ -328,10 +328,7 @@ def _assemble_record(ctx, final_state, started, *, debate, dropped, nonce):
+         "macro": getattr(m_rep, "regime", None) if m_rep else None,
+     }
+     
+-    evidence_flags = {
+-        "has_news": bool(getattr(ctx.news, "headlines", None)),
+-        "has_fundamentals": bool(getattr(ctx.fundamentals, "market_cap", None)),
+-    }
++    evidence_flags = _evidence_flags(ctx)
+ 
+     return ForecastRecord(
+         ticker=ctx.ticker,
+@@ -513,3 +510,17 @@ def _stage_detail(node_name: str, payload: dict) -> str:
+         final = payload.get("final")
+         return f"{final.signal}, {final.confidence_pct:.0f}% confidence" if final else "failed"
+     return ""
++
++
++def _has_values(d) -> bool:
++    if isinstance(d, dict):
++        return any(_has_values(v) for v in d.values())
++    if isinstance(d, (list, tuple)):
++        return any(_has_values(v) for v in d)
++    return d is not None and d != ""
++
++
++def _evidence_flags(ctx) -> dict:
++    """ctx.news / ctx.fundamentals are DICTS (getattr on a dict is always None)."""
++    return {"has_news": bool((ctx.news or {}).get("headlines")),
++            "has_fundamentals": _has_values(ctx.fundamentals)}
+diff --git a/docs/RESULTS_MAP.md b/docs/RESULTS_MAP.md
+index ea9a7ca..b80e8dc 100644
+--- a/docs/RESULTS_MAP.md
++++ b/docs/RESULTS_MAP.md
+@@ -1,12 +1,12 @@
+-# Multi-Agent Financial Forecasting: Results Map
++# Results map
+ 
+-This document serves as the central directory mapping the key claims of the thesis to the exact artifacts, commits, and reproduction commands that validate them.
++**Status: no valid research results exist yet.** The only runs so far are 5-case pipeline smoke tests, quarantined in `results/pilot_contaminated/`.
+ 
+-| Thesis Claim | Result File | Git Commit | Command to Reproduce |
++| Thesis question | Evidence file | Commit | Status |
+ | :--- | :--- | :--- | :--- |
+-| **Claim 1: The Multi-Agent System performs similarly to a Single-LLM baseline** | `results/ablation_*.md` | `HEAD` | `python -m evaluate ablate` |
+-| **Claim 2: The Bull/Bear debate stage does not justify its cost** | `results/ablation_*.md` | `HEAD` | `python -m evaluate ablate` |
+-| **Claim 3: The Macro Specialist is the only agent contributing unique predictive value** | `results/ablation_*.md` | `HEAD` | `python -m evaluate ablate` |
+-| **Claim 4: Qualitative Failures are driven by data availability and fundamental bias** | `results/failures_*.md` | `HEAD` | `python backend/eval/failures.py` |
++| Multi-agent vs single-LLM vs naive: accuracy, calibration | _pending_ | _pending_ | Not run on a clean, post-cutoff, frozen test set |
++| Debate vs no-debate | _pending_ | _pending_ | Not run |
++| Leave-one-specialist-out ablations | _pending_ | _pending_ | Not run |
++| Cost / latency / tokens | _pending_ | _pending_ | Needs uncached cost runs |
+ 
+-*Note: Due to API rate limiting and compute constraints, final 160-case runs must be executed by the researcher prior to submitting the thesis.*
++Rows are filled in only from committed files in `results/`, with n and confidence intervals. A null result is a valid finding.
+diff --git a/docs/FAILURES.md b/results/pilot_contaminated/FAILURES_pilot.md
+similarity index 100%
+rename from docs/FAILURES.md
+rename to results/pilot_contaminated/FAILURES_pilot.md
+diff --git a/results/pilot_contaminated/README.md b/results/pilot_contaminated/README.md
+new file mode 100644
+index 0000000..3890ffb
+--- /dev/null
++++ b/results/pilot_contaminated/README.md
+@@ -0,0 +1,3 @@
++# Pilot runs - NOT research evidence
++
++5-case smoke tests of the pipeline, run on 2024 dates inside the model's training period (gemini-3.5-flash-lite, documented cutoff March 2026), on uncommitted code, with a cache-distorted cost accounting and a buggy evidence-flag field. They show that the pipeline runs end to end. Nothing here may be cited as a result.
+diff --git a/results/ablation_20261007_013802.md b/results/pilot_contaminated/ablation_20261007_013802.md
+similarity index 100%
+rename from results/ablation_20261007_013802.md
+rename to results/pilot_contaminated/ablation_20261007_013802.md
+diff --git a/results/ablation_20261007_021440.md b/results/pilot_contaminated/ablation_20261007_021440.md
+similarity index 100%
+rename from results/ablation_20261007_021440.md
+rename to results/pilot_contaminated/ablation_20261007_021440.md
+diff --git a/results/ablation_20261007_132305.md b/results/pilot_contaminated/ablation_20261007_132305.md
+similarity index 100%
+rename from results/ablation_20261007_132305.md
+rename to results/pilot_contaminated/ablation_20261007_132305.md
+diff --git a/results/baseline_20261007_012519.csv b/results/pilot_contaminated/baseline_20261007_012519.csv
+similarity index 100%
+rename from results/baseline_20261007_012519.csv
+rename to results/pilot_contaminated/baseline_20261007_012519.csv
+diff --git a/results/baseline_20261007_012519.json b/results/pilot_contaminated/baseline_20261007_012519.json
+similarity index 100%
+rename from results/baseline_20261007_012519.json
+rename to results/pilot_contaminated/baseline_20261007_012519.json
+diff --git a/results/baseline_20261007_012519.md b/results/pilot_contaminated/baseline_20261007_012519.md
+similarity index 100%
+rename from results/baseline_20261007_012519.md
+rename to results/pilot_contaminated/baseline_20261007_012519.md
+diff --git a/results/failures_20261007_132318.md b/results/pilot_contaminated/failures_20261007_132318.md
+similarity index 100%
+rename from results/failures_20261007_132318.md
+rename to results/pilot_contaminated/failures_20261007_132318.md
+diff --git a/results/multiagent-no-fundamental_20261007_013540.csv b/results/pilot_contaminated/multiagent-no-fundamental_20261007_013540.csv
+similarity index 100%
+rename from results/multiagent-no-fundamental_20261007_013540.csv
+rename to results/pilot_contaminated/multiagent-no-fundamental_20261007_013540.csv
+diff --git a/results/multiagent-no-fundamental_20261007_013540.json b/results/pilot_contaminated/multiagent-no-fundamental_20261007_013540.json
+similarity index 100%
+rename from results/multiagent-no-fundamental_20261007_013540.json
+rename to results/pilot_contaminated/multiagent-no-fundamental_20261007_013540.json
+diff --git a/results/multiagent-no-fundamental_20261007_013540.md b/results/pilot_contaminated/multiagent-no-fundamental_20261007_013540.md
+similarity index 100%
+rename from results/multiagent-no-fundamental_20261007_013540.md
+rename to results/pilot_contaminated/multiagent-no-fundamental_20261007_013540.md
+diff --git a/results/multiagent-no-macro_20261007_013802.csv b/results/pilot_contaminated/multiagent-no-macro_20261007_013802.csv
+similarity index 100%
+rename from results/multiagent-no-macro_20261007_013802.csv
+rename to results/pilot_contaminated/multiagent-no-macro_20261007_013802.csv
+diff --git a/results/multiagent-no-macro_20261007_013802.json b/results/pilot_contaminated/multiagent-no-macro_20261007_013802.json
+similarity index 100%
+rename from results/multiagent-no-macro_20261007_013802.json
+rename to results/pilot_contaminated/multiagent-no-macro_20261007_013802.json
+diff --git a/results/multiagent-no-macro_20261007_013802.md b/results/pilot_contaminated/multiagent-no-macro_20261007_013802.md
+similarity index 100%
+rename from results/multiagent-no-macro_20261007_013802.md
+rename to results/pilot_contaminated/multiagent-no-macro_20261007_013802.md
+diff --git a/results/multiagent-no-sentiment_20261007_013549.csv b/results/pilot_contaminated/multiagent-no-sentiment_20261007_013549.csv
+similarity index 100%
+rename from results/multiagent-no-sentiment_20261007_013549.csv
+rename to results/pilot_contaminated/multiagent-no-sentiment_20261007_013549.csv
+diff --git a/results/multiagent-no-sentiment_20261007_013549.json b/results/pilot_contaminated/multiagent-no-sentiment_20261007_013549.json
+similarity index 100%
+rename from results/multiagent-no-sentiment_20261007_013549.json
+rename to results/pilot_contaminated/multiagent-no-sentiment_20261007_013549.json
+diff --git a/results/multiagent-no-sentiment_20261007_013549.md b/results/pilot_contaminated/multiagent-no-sentiment_20261007_013549.md
+similarity index 100%
+rename from results/multiagent-no-sentiment_20261007_013549.md
+rename to results/pilot_contaminated/multiagent-no-sentiment_20261007_013549.md
+diff --git a/results/multiagent-no-technical_20261007_013144.csv b/results/pilot_contaminated/multiagent-no-technical_20261007_013144.csv
+similarity index 100%
+rename from results/multiagent-no-technical_20261007_013144.csv
+rename to results/pilot_contaminated/multiagent-no-technical_20261007_013144.csv
+diff --git a/results/multiagent-no-technical_20261007_013144.json b/results/pilot_contaminated/multiagent-no-technical_20261007_013144.json
+similarity index 100%
+rename from results/multiagent-no-technical_20261007_013144.json
+rename to results/pilot_contaminated/multiagent-no-technical_20261007_013144.json
+diff --git a/results/multiagent-no-technical_20261007_013144.md b/results/pilot_contaminated/multiagent-no-technical_20261007_013144.md
+similarity index 100%
+rename from results/multiagent-no-technical_20261007_013144.md
+rename to results/pilot_contaminated/multiagent-no-technical_20261007_013144.md
+diff --git a/results/multiagent-nodebate_20261007_012928.csv b/results/pilot_contaminated/multiagent-nodebate_20261007_012928.csv
+similarity index 100%
+rename from results/multiagent-nodebate_20261007_012928.csv
+rename to results/pilot_contaminated/multiagent-nodebate_20261007_012928.csv
+diff --git a/results/multiagent-nodebate_20261007_012928.json b/results/pilot_contaminated/multiagent-nodebate_20261007_012928.json
+similarity index 100%
+rename from results/multiagent-nodebate_20261007_012928.json
+rename to results/pilot_contaminated/multiagent-nodebate_20261007_012928.json
+diff --git a/results/multiagent-nodebate_20261007_012928.md b/results/pilot_contaminated/multiagent-nodebate_20261007_012928.md
+similarity index 100%
+rename from results/multiagent-nodebate_20261007_012928.md
+rename to results/pilot_contaminated/multiagent-nodebate_20261007_012928.md
+diff --git a/results/multiagent_20261007_012853.csv b/results/pilot_contaminated/multiagent_20261007_012853.csv
+similarity index 100%
+rename from results/multiagent_20261007_012853.csv
+rename to results/pilot_contaminated/multiagent_20261007_012853.csv
+diff --git a/results/multiagent_20261007_012853.json b/results/pilot_contaminated/multiagent_20261007_012853.json
+similarity index 100%
+rename from results/multiagent_20261007_012853.json
+rename to results/pilot_contaminated/multiagent_20261007_012853.json
+diff --git a/results/multiagent_20261007_012853.md b/results/pilot_contaminated/multiagent_20261007_012853.md
+similarity index 100%
+rename from results/multiagent_20261007_012853.md
+rename to results/pilot_contaminated/multiagent_20261007_012853.md
+diff --git a/results/multiagent_20261007_021440.csv b/results/pilot_contaminated/multiagent_20261007_021440.csv
+similarity index 100%
+rename from results/multiagent_20261007_021440.csv
+rename to results/pilot_contaminated/multiagent_20261007_021440.csv
+diff --git a/results/multiagent_20261007_021440.json b/results/pilot_contaminated/multiagent_20261007_021440.json
+similarity index 100%
+rename from results/multiagent_20261007_021440.json
+rename to results/pilot_contaminated/multiagent_20261007_021440.json
+diff --git a/results/multiagent_20261007_021440.md b/results/pilot_contaminated/multiagent_20261007_021440.md
+similarity index 100%
+rename from results/multiagent_20261007_021440.md
+rename to results/pilot_contaminated/multiagent_20261007_021440.md
+diff --git a/results/multiagent_20261007_132305.csv b/results/pilot_contaminated/multiagent_20261007_132305.csv
+similarity index 100%
+rename from results/multiagent_20261007_132305.csv
+rename to results/pilot_contaminated/multiagent_20261007_132305.csv
+diff --git a/results/multiagent_20261007_132305.json b/results/pilot_contaminated/multiagent_20261007_132305.json
+similarity index 100%
+rename from results/multiagent_20261007_132305.json
+rename to results/pilot_contaminated/multiagent_20261007_132305.json
+diff --git a/results/multiagent_20261007_132305.md b/results/pilot_contaminated/multiagent_20261007_132305.md
+similarity index 100%
+rename from results/multiagent_20261007_132305.md
+rename to results/pilot_contaminated/multiagent_20261007_132305.md
+diff --git a/results/naive-alwaysup_20261007_012436.csv b/results/pilot_contaminated/naive-alwaysup_20261007_012436.csv
+similarity index 100%
+rename from results/naive-alwaysup_20261007_012436.csv
+rename to results/pilot_contaminated/naive-alwaysup_20261007_012436.csv
+diff --git a/results/naive-alwaysup_20261007_012436.json b/results/pilot_contaminated/naive-alwaysup_20261007_012436.json
+similarity index 100%
+rename from results/naive-alwaysup_20261007_012436.json
+rename to results/pilot_contaminated/naive-alwaysup_20261007_012436.json
+diff --git a/results/naive-alwaysup_20261007_012436.md b/results/pilot_contaminated/naive-alwaysup_20261007_012436.md
+similarity index 100%
+rename from results/naive-alwaysup_20261007_012436.md
+rename to results/pilot_contaminated/naive-alwaysup_20261007_012436.md
+diff --git a/results/naive-momentum_20261007_012436.csv b/results/pilot_contaminated/naive-momentum_20261007_012436.csv
+similarity index 100%
+rename from results/naive-momentum_20261007_012436.csv
+rename to results/pilot_contaminated/naive-momentum_20261007_012436.csv
+diff --git a/results/naive-momentum_20261007_012436.json b/results/pilot_contaminated/naive-momentum_20261007_012436.json
+similarity index 100%
+rename from results/naive-momentum_20261007_012436.json
+rename to results/pilot_contaminated/naive-momentum_20261007_012436.json
+diff --git a/results/naive-momentum_20261007_012436.md b/results/pilot_contaminated/naive-momentum_20261007_012436.md
+similarity index 100%
+rename from results/naive-momentum_20261007_012436.md
+rename to results/pilot_contaminated/naive-momentum_20261007_012436.md
+diff --git a/results/preflight_20261007_001821.json b/results/pilot_contaminated/preflight_20261007_001821.json
+similarity index 100%
+rename from results/preflight_20261007_001821.json
+rename to results/pilot_contaminated/preflight_20261007_001821.json
+diff --git a/scratch/patch_ablation.py b/scratch/patch_ablation.py
+deleted file mode 100644
+index 0bf02a9..0000000
+--- a/scratch/patch_ablation.py
++++ /dev/null
+@@ -1,148 +0,0 @@
+-import sys
+-import os
+-
+-path = 'backend/eval/ablation.py'
+-with open(path, 'r', encoding='utf-8') as f:
+-    code = f.read()
+-
+-# Add stats import
+-code = code.replace('from backend.eval import harness, metrics', 'from backend.eval import harness, metrics, stats')
+-
+-# Add helper for scored map
+-map_helper = """
+-def _make_map(scored_by_run: list[list]) -> dict:
+-    out = {}
+-    for run_idx, run_scored in enumerate(scored_by_run):
+-        for s in run_scored:
+-            if s.direction_correct is not None:
+-                out[(f"{s.ticker}_{run_idx}", s.as_of)] = float(s.direction_correct)
+-    return out
+-"""
+-code = code.replace('def aggregate(summaries: list[dict]) -> dict:', map_helper + '\ndef aggregate(summaries: list[dict]) -> dict:')
+-
+-# Modify run_suite
+-run_suite_old = """        for i in range(1, repeats + 1):
+-            # Unique nonce per repeat -- see the module docstring.
+-            nonce = f"r{i}" if repeats > 1 else ""
+-            if progress:
+-                label = f"{system} (repeat {i}/{repeats})" if repeats > 1 else system
+-                print(f"\\n  === {label} ===")
+-            try:
+-                result = harness.run(system, limit=limit, nonce=nonce, progress=progress)
+-            except Exception as exc:
+-                print(f"  SKIPPED {system}: {type(exc).__name__}: {exc}")
+-                continue
+-            harness.write_results(result)
+-            per_run.append(result["summary"])
+-        if per_run:
+-            results[system] = aggregate(per_run)"""
+-
+-run_suite_new = """        scored_by_run = []
+-        for i in range(1, repeats + 1):
+-            # Unique nonce per repeat -- see the module docstring.
+-            nonce = f"r{i}" if repeats > 1 else ""
+-            if progress:
+-                label = f"{system} (repeat {i}/{repeats})" if repeats > 1 else system
+-                print(f"\\n  === {label} ===")
+-            try:
+-                result = harness.run(system, limit=limit, nonce=nonce, progress=progress)
+-            except Exception as exc:
+-                print(f"  SKIPPED {system}: {type(exc).__name__}: {exc}")
+-                continue
+-            harness.write_results(result)
+-            per_run.append(result["summary"])
+-            scored_by_run.append(result["scored"])
+-        if per_run:
+-            agg = aggregate(per_run)
+-            agg["scored_map"] = _make_map(scored_by_run)
+-            try:
+-                if len(agg["scored_map"]) > 0:
+-                    ci = stats.mean_ci(agg["scored_map"])
+-                    agg["dir_acc_ci_low"] = ci["ci_low"] * 100
+-                    agg["dir_acc_ci_high"] = ci["ci_high"] * 100
+-            except ValueError:
+-                pass
+-            results[system] = agg"""
+-code = code.replace(run_suite_old, run_suite_new)
+-
+-# Modify _fmt to handle CIs
+-fmt_old = 'def _fmt(value, suffix: str = "", std=None) -> str:'
+-fmt_new = """def _fmt(value, suffix: str = "", std=None, ci_low=None, ci_high=None) -> str:
+-    if value is None:
+-        return "—"
+-    text = f"{value:,.2f}{suffix}" if isinstance(value, float) else f"{value:,}{suffix}"
+-    if std is not None:
+-        text += f" ±{std:,.2f}"
+-    if ci_low is not None and ci_high is not None:
+-        text += f" [{ci_low:,.1f}, {ci_high:,.1f}]"
+-    return text"""
+-code = code.replace('def _fmt(value, suffix: str = "", std=None) -> str:\n    if value is None:\n        return "—"\n    text = f"{value:,.2f}{suffix}" if isinstance(value, float) else f"{value:,}{suffix}"\n    if std:\n        text += f" ±{std:,.2f}"\n    return text', fmt_new)
+-
+-# Update comparison_table
+-comp_old = """        cells = [_fmt(s.get(k), std=s.get(f"{k}_std")) for k, _ in cols]"""
+-comp_new = """        cells = []
+-        for k, _ in cols:
+-            if k == "directional_accuracy_pct" and "dir_acc_ci_low" in s:
+-                cells.append(_fmt(s.get(k), std=s.get(f"{k}_std"), ci_low=s.get("dir_acc_ci_low"), ci_high=s.get("dir_acc_ci_high")))
+-            else:
+-                cells.append(_fmt(s.get(k), std=s.get(f"{k}_std")))"""
+-code = code.replace(comp_old, comp_new)
+-
+-# Add pair evaluation helper
+-pair_helper = """
+-def _pair_stats(a_sys: str, b_sys: str, results: dict) -> str:
+-    if a_sys not in results or b_sys not in results:
+-        return "—"
+-    a_map = results[a_sys].get("scored_map", {})
+-    b_map = results[b_sys].get("scored_map", {})
+-    keys = sorted(set(a_map) & set(b_map))
+-    if not keys: return "—"
+-    try:
+-        diff_ci = stats.paired_diff_ci(a_map, b_map)
+-        a_bools = [bool(a_map[k]) for k in keys]
+-        b_bools = [bool(b_map[k]) for k in keys]
+-        mc = stats.mcnemar_exact(a_bools, b_bools)
+-        
+-        sig = "" if diff_ci["excludes_zero"] else " (no supported difference)"
+-        mc_text = f"p={mc['p_value']:.3f} optimistic: assumes independent cases"
+-        return f"{diff_ci['mean']*100:+.2f} [{diff_ci['ci_low']*100:+.2f}, {diff_ci['ci_high']*100:+.2f}]{sig} | {mc_text}"
+-    except Exception as exc:
+-        return f"error: {exc}"
+-"""
+-code = code.replace('def debate_verdict(results: dict[str, dict]) -> str:', pair_helper + '\ndef debate_verdict(results: dict[str, dict]) -> str:')
+-
+-# Modify debate_verdict
+-deb_old = """    acc_delta = _delta(full.get("directional_accuracy_pct"),
+-                       lean.get("directional_accuracy_pct"))"""
+-deb_new = """    acc_delta = _delta(full.get("directional_accuracy_pct"),
+-                       lean.get("directional_accuracy_pct"))
+-    acc_stats = _pair_stats("multiagent", "multiagent-nodebate", results)"""
+-code = code.replace(deb_old, deb_new)
+-
+-deb_table_old = """        f"| Directional accuracy % | {_fmt(full.get('directional_accuracy_pct'))} | "
+-        f"{_fmt(lean.get('directional_accuracy_pct'))} | {acc_delta} |","""
+-deb_table_new = """        f"| Directional accuracy % | {_fmt(full.get('directional_accuracy_pct'))} | "
+-        f"{_fmt(lean.get('directional_accuracy_pct'))} | {acc_delta}<br/>_{acc_stats}_ |","""
+-code = code.replace(deb_table_old, deb_table_new)
+-
+-# Modify leave_one_out_table
+-loo_old = """        name = system.replace("multiagent-no-", "")
+-        lines.append(
+-            f"| {name} | {_fmt(s.get('directional_accuracy_pct'))} | "
+-            f"{_delta(s.get('directional_accuracy_pct'), full.get('directional_accuracy_pct'))} | "
+-            f"{_fmt(s.get('nifty_relative_accuracy_pct'))} | "
+-            f"{_fmt(s.get('mean_tokens_per_forecast'))} |"
+-        )"""
+-loo_new = """        name = system.replace("multiagent-no-", "")
+-        diff_stats = _pair_stats(system, "multiagent", results)
+-        lines.append(
+-            f"| {name} | {_fmt(s.get('directional_accuracy_pct'))} | "
+-            f"{_delta(s.get('directional_accuracy_pct'), full.get('directional_accuracy_pct'))}<br/>_{diff_stats}_ | "
+-            f"{_fmt(s.get('nifty_relative_accuracy_pct'))} | "
+-            f"{_fmt(s.get('mean_tokens_per_forecast'))} |"
+-        )"""
+-code = code.replace(loo_old, loo_new)
+-
+-with open(path, 'w', encoding='utf-8') as f:
+-    f.write(code)
+-print("done")
+diff --git a/tests/test_evidence_flags.py b/tests/test_evidence_flags.py
+new file mode 100644
+index 0000000..6ac61c9
+--- /dev/null
++++ b/tests/test_evidence_flags.py
+@@ -0,0 +1,12 @@
++from types import SimpleNamespace as NS
++from backend.graph.pipeline import _evidence_flags
++
++
++def test_flags_read_dict_contexts_correctly():
++    ctx = NS(news={"headlines": [{"title": "x"}]}, fundamentals={"a": {"b": 3}})
++    assert _evidence_flags(ctx) == {"has_news": True, "has_fundamentals": True}
++
++
++def test_flags_false_when_empty_or_none():
++    assert _evidence_flags(NS(news={"headlines": []}, fundamentals={"a": None})) == {"has_news": False, "has_fundamentals": False}
++    assert _evidence_flags(NS(news=None, fundamentals=None))["has_news"] is False
+diff --git a/web/src/App.jsx b/web/src/App.jsx
+index 7ecfd4a..607b6da 100644
+--- a/web/src/App.jsx
++++ b/web/src/App.jsx
+@@ -1,30 +1,28 @@
+ import React, { useState } from 'react';
+-import { Sparkles, Activity, FlaskConical } from 'lucide-react';
++import { Sparkles } from 'lucide-react';
+ import Forecast from './pages/Forecast';
+ import Experiments from './pages/Experiments';
+ import './index.css';
+ 
+-export default function App() {
+-  const [activeTab, setActiveTab] = useState('forecast');
++// Research tools (experiments, as-of date, debate switch) are hidden from normal
++// visitors. Open the app with ?research=1 to show them (e.g. for the viva).
++const research = new URLSearchParams(window.location.search).has('research');
+ 
++export default function App() {
++  const [page, setPage] = useState('forecast');
+   return (
+-    <div className="app-container">
+-      <nav className="top-nav">
++    <div className="shell">
++      <header className="top">
+         <div className="brand"><div className="logo"><Sparkles size={18} /></div>Forecaster</div>
+-        <div className="nav-links">
+-          <button className={`nav-link ${activeTab === 'forecast' ? 'active' : ''}`} onClick={() => setActiveTab('forecast')}>
+-            <Activity size={16} /> Live Forecast
+-          </button>
+-          <button className={`nav-link ${activeTab === 'experiments' ? 'active' : ''}`} onClick={() => setActiveTab('experiments')}>
+-            <FlaskConical size={16} /> Experiments
+-          </button>
+-        </div>
+-      </nav>
+-      
+-      <div className="page-content">
+-        {activeTab === 'forecast' && <Forecast />}
+-        {activeTab === 'experiments' && <Experiments />}
+-      </div>
++        {research && (
++          <nav>
++            <button className={page === 'forecast' ? 'on' : ''} onClick={() => setPage('forecast')}>Forecast</button>
++            <button className={page === 'research' ? 'on' : ''} onClick={() => setPage('research')}>Experiments</button>
++          </nav>
++        )}
++      </header>
++      <main>{research && page === 'research' ? <Experiments /> : <Forecast research={research} />}</main>
++      <footer>AI-generated research estimate for educational use. Not investment advice. Markets can move against any forecast.</footer>
+     </div>
+   );
+ }
+diff --git a/web/src/hooks/useMarketData.js b/web/src/hooks/useMarketData.js
+index 6c34b9d..8f7d059 100644
+--- a/web/src/hooks/useMarketData.js
++++ b/web/src/hooks/useMarketData.js
+@@ -34,9 +34,8 @@ export function useMarketData(ticker, asOf) {
+       }
+     };
+ 
+-    fetchData();
+-
+-    return () => { isMounted = false; };
++    const timer = setTimeout(fetchData, 600); // debounce: don't hit Yahoo/NSE per keystroke
++    return () => { isMounted = false; clearTimeout(timer); };
+   }, [ticker, asOf]);
+ 
+   return { data, loading, error };
+diff --git a/web/src/index.css b/web/src/index.css
+index f7c856c..b3b3784 100644
+--- a/web/src/index.css
++++ b/web/src/index.css
+@@ -1,115 +1,37 @@
+-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
+-:root{--bg:#f6f7fb;--card:#fff;--ink:#0f172a;--mute:#64748b;--line:#e5e7ef;--brand:#6366f1;--brand2:#06b6d4;--up:#059669;--upbg:#d1fae5;--down:#dc2626;--downbg:#fee2e2;--hold:#d97706;--holdbg:#fef3c7;--r:16px;--sh:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06)}
+-@media(prefers-color-scheme:dark){:root{--bg:#070b16;--card:#0f1629;--ink:#e8ecf7;--mute:#8b97b5;--line:#1c2540;--upbg:#064e3b;--downbg:#4c1d1d;--holdbg:#4a3410;--sh:0 8px 28px rgba(0,0,0,.45)}}
+-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+-.app{display:grid;grid-template-columns:320px 1fr;min-height:100vh}
+-.side{padding:28px 22px;border-right:1px solid var(--line);background:var(--card);position:sticky;top:0;height:100vh;overflow:auto}
+-.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:1.15rem;letter-spacing:-.02em}
+-.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;color:#fff}
+-.tag{font-size:.7rem;color:var(--mute);margin:6px 0 26px}
+-label{display:block;font-size:.72rem;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 7px}
+-input[type=text],input[type=date]{width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 .95rem 'JetBrains Mono',monospace;outline:none;transition:.15s}
+-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(99,102,241,.18)}
+-.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+-.chip{border:1px solid var(--line);background:none;color:var(--mute);padding:5px 10px;border-radius:99px;font-size:.72rem;cursor:pointer;transition:.15s}
+-.chip:hover{color:var(--brand);border-color:var(--brand)}
+-.switch{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;font-size:.88rem;font-weight:500;cursor:pointer}
+-.switch small{display:block;color:var(--mute);font-weight:400;font-size:.72rem;margin-top:2px}
+-.tog{width:42px;height:24px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex:none}
+-.tog::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+-.tog.on{background:var(--brand)}.tog.on::after{left:21px}
+-.run{width:100%;margin-top:22px;padding:14px;border:0;border-radius:13px;color:#fff;font:700 .95rem Inter;cursor:pointer;background:linear-gradient(135deg,var(--brand),var(--brand2));box-shadow:0 8px 20px rgba(99,102,241,.35);display:flex;gap:8px;justify-content:center;align-items:center;transition:.15s}
+-.run:hover{transform:translateY(-1px)}.run:disabled{opacity:.55;cursor:wait;transform:none}
+-.note{margin-top:22px;padding:12px 14px;border-radius:12px;background:var(--bg);font-size:.72rem;color:var(--mute);line-height:1.5}
+-main{padding:30px 34px;display:flex;flex-direction:column;gap:20px;max-width:1180px;width:100%}
+-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:var(--sh)}
+-.card h3{margin:0 0 14px;font-size:.78rem;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);font-weight:700}
+-.head{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px}
+-.head h2{margin:0;font-size:1.9rem;letter-spacing:-.03em}.head span{color:var(--mute);font-size:.88rem}
+-.badge{display:inline-flex;gap:6px;align-items:center;padding:6px 12px;border-radius:99px;background:var(--upbg);color:var(--up);font-size:.74rem;font-weight:600}
+-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+-.kpi{padding:16px 18px;border-radius:14px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh)}
+-.kpi small{color:var(--mute);font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+-.kpi b{display:block;margin-top:6px;font-size:1.4rem;letter-spacing:-.02em}
+-.steps{display:flex;gap:6px;margin:4px 0 14px}
+-.step{flex:1;height:6px;border-radius:9px;background:var(--line);transition:.4s}.step.on{background:linear-gradient(90deg,var(--brand),var(--brand2))}
+-.log{font:500 .76rem 'JetBrains Mono',monospace;color:var(--mute);max-height:150px;overflow:auto;line-height:1.8}
+-.log .d{color:var(--up)}
+-.result{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:20px}
+-@media(max-width:1000px){.app{grid-template-columns:1fr}.side{position:static;height:auto}.result{grid-template-columns:1fr}main{padding:20px}}
+-.sig{border-radius:var(--r);padding:26px;text-align:center}
+-.sig.buy{background:var(--upbg);color:var(--up)}.sig.sell{background:var(--downbg);color:var(--down)}.sig.hold{background:var(--holdbg);color:var(--hold)}
+-.sig .w{font-size:3rem;font-weight:800;letter-spacing:-.04em;line-height:1}
+-.sig .rng{margin-top:12px;font:600 .95rem 'JetBrains Mono',monospace;color:var(--ink)}
+-.conf{margin-top:18px;height:8px;border-radius:9px;background:rgba(127,127,127,.2);overflow:hidden}.conf i{display:block;height:100%;background:currentColor;border-radius:9px}
+-.sig small{display:block;margin-top:7px;color:var(--ink);opacity:.7;font-size:.76rem}
+-.reason{line-height:1.7;font-size:.93rem;color:var(--ink)}
+-.risks{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+-.risk{padding:6px 12px;border-radius:99px;background:var(--downbg);color:var(--down);font-size:.76rem;font-weight:500}
+-.debate{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+-@media(max-width:800px){.debate{grid-template-columns:1fr}}
+-.turn{padding:16px;border-radius:14px;border:1px solid var(--line)}
+-.turn.bull{background:linear-gradient(180deg,var(--upbg),transparent 70%)}.turn.bear{background:linear-gradient(180deg,var(--downbg),transparent 70%)}
+-.turn h4{margin:0 0 8px;font-size:.82rem}.turn ul{margin:0;padding-left:18px;font-size:.84rem;line-height:1.6}
+-.news a,.news div{display:block;padding:9px 0;border-bottom:1px solid var(--line);font-size:.86rem;color:var(--ink);text-decoration:none}
+-.err{padding:14px 16px;border-radius:12px;background:var(--downbg);color:var(--down);font-size:.88rem}
+-.empty{text-align:center;padding:60px 20px;color:var(--mute)}
++@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
++:root{--bg:#f6f7fb;--card:#fff;--ink:#0f172a;--mute:#5b6679;--line:#e5e7ef;--brand:#4f46e5;--brand2:#0891b2;--up:#047857;--upbg:#d1fae5;--down:#b91c1c;--downbg:#fee2e2;--hold:#92400e;--holdbg:#fef3c7;--sh:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06)}
++@media(prefers-color-scheme:dark){:root{--bg:#070b16;--card:#0f1629;--ink:#e8ecf7;--mute:#9aa6c2;--line:#1c2540;--brand:#818cf8;--up:#6ee7b7;--upbg:#064e3b;--down:#fca5a5;--downbg:#4c1d1d;--hold:#fde68a;--holdbg:#4a3410;--sh:0 8px 28px rgba(0,0,0,.45)}}
++*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
++button{font:inherit;cursor:pointer}button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
++.shell{min-height:100vh;display:flex;flex-direction:column}main{flex:1;width:100%;max-width:980px;margin:0 auto;padding:0 20px 40px}
++.top{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;border-bottom:1px solid var(--line);background:var(--card)}
++.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.1rem}.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand2));display:grid;place-items:center;color:#fff}
++nav button{border:0;background:none;color:var(--mute);padding:8px 14px;border-radius:99px;font-weight:600}nav button.on{background:var(--bg);color:var(--ink)}
++footer{padding:18px 24px;text-align:center;font-size:.78rem;color:var(--mute);border-top:1px solid var(--line)}
++.page{display:flex;flex-direction:column;gap:18px}
++.hero{text-align:center;padding:42px 0 6px}.hero h1{margin:0;font-size:clamp(1.7rem,4.5vw,2.5rem);letter-spacing:-.03em}.hero p{max-width:560px;margin:10px auto 22px;color:var(--mute)}
++.search{position:relative;max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:0 16px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);color:var(--mute)}
++.search input{flex:1;border:0;background:none;padding:15px 0;font-size:1rem;color:var(--ink);outline:0}.search:focus-within{border-color:var(--brand)}
++.sug{position:absolute;top:100%;left:0;right:0;margin:6px 0 0;padding:6px;list-style:none;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh);z-index:5;text-align:left}
++.sug button{width:100%;display:flex;justify-content:space-between;border:0;background:none;color:var(--ink);padding:10px 12px;border-radius:8px}.sug button:hover{background:var(--bg)}.sug small{color:var(--mute)}
++.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
++.chip{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:7px 14px;border-radius:99px;font-size:.85rem}.chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
++.rbar{display:flex;gap:18px;justify-content:center;margin-top:16px;font-size:.85rem;color:var(--mute)}
++.titlerow{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}.titlerow h2{margin:0;font-size:1.6rem;letter-spacing:-.02em}.titlerow span{color:var(--mute);font-size:.85rem}
++.go{border:0;border-radius:12px;padding:13px 26px;color:#fff;font-weight:700;background:linear-gradient(135deg,var(--brand),var(--brand2));display:flex;gap:8px;align-items:center}.go:disabled{opacity:.6;cursor:wait}
++.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--sh)}.card h3{margin:0 0 12px;font-size:.95rem}
++.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}.kpi small{color:var(--mute);font-size:.78rem}.kpi b{display:block;font-size:1.2rem;margin-top:4px}
++.skel{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.skel i{height:70px;border-radius:14px;background:linear-gradient(90deg,var(--line),var(--card),var(--line));background-size:200% 100%;animation:sh 1.2s infinite}@keyframes sh{to{background-position:-200% 0}}
++.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}.steps li{display:flex;gap:10px;align-items:center;color:var(--mute)}.steps li.ok{color:var(--up)}.steps li.now{color:var(--ink);font-weight:600}.dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--line)}
++.log{font:.75rem ui-monospace,monospace;max-height:140px;overflow:auto;color:var(--mute)}
++.result{display:grid;grid-template-columns:minmax(250px,320px) 1fr;gap:18px}@media(max-width:800px){.result{grid-template-columns:1fr}}
++.sig{border-radius:16px;padding:26px;text-align:center}.sig.buy{background:var(--upbg);color:var(--up)}.sig.sell{background:var(--downbg);color:var(--down)}.sig.hold{background:var(--holdbg);color:var(--hold)}
++.sig .w{font-size:2.8rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}.sig p{margin:6px 0 14px;color:var(--ink)}.rng{font-weight:700;color:var(--ink)}.rng small{display:block;font-weight:500;color:var(--mute)}
++.conf{margin:16px 0 6px;height:8px;border-radius:9px;background:rgba(127,127,127,.25);overflow:hidden}.conf i{display:block;height:100%;background:currentColor}.sig>small{color:var(--ink)}
++.reason{margin:0;line-height:1.7}.risks,.src{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.92rem}
++.debate{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:700px){.debate{grid-template-columns:1fr}}
++.turn{padding:16px;border-radius:14px;border:1px solid var(--line)}.turn.bull{background:var(--upbg)}.turn.bear{background:var(--downbg)}.turn h4{margin:0 0 8px}.turn ul{margin:0 0 8px;padding-left:18px;font-size:.88rem}
++.err{padding:14px 16px;border-radius:12px;background:var(--downbg);color:var(--down);display:flex;gap:12px;align-items:center;flex-wrap:wrap}.err button{margin-left:auto;border:1px solid currentColor;background:none;color:inherit;padding:6px 14px;border-radius:99px}
++.hint{display:flex;gap:6px;align-items:center;justify-content:center;color:var(--mute);font-size:.88rem}
+ @keyframes sp{to{transform:rotate(360deg)}}.spin{animation:sp 1s linear infinite}
+-
+-/* Layout overrides for routing */
+-.app-container { display: flex; flex-direction: column; min-height: 100vh; }
+-.top-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 34px; background: var(--card); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+-.nav-links { display: flex; gap: 16px; }
+-.nav-link { background: none; border: none; color: var(--mute); font-size: 0.95rem; font-weight: 600; cursor: pointer; padding: 8px 12px; border-radius: 8px; transition: 0.15s; display: flex; align-items: center; gap: 8px; }
+-.nav-link:hover { background: rgba(99,102,241,0.08); color: var(--brand); }
+-.nav-link.active { background: rgba(99,102,241,0.12); color: var(--brand); }
+-.page-content { flex: 1; display: flex; flex-direction: column; }
+-.forecast-layout { display: grid; grid-template-columns: 320px 1fr; flex: 1; }
+-.forecast-main { padding: 30px 34px; display: flex; flex-direction: column; gap: 20px; max-width: 1180px; width: 100%; }
+-.experiments-main { padding: 30px 34px; max-width: 1180px; width: 100%; margin: 0 auto; }
+-
+-/* Table styling for Experiments */
+-.exp-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left; }
+-.exp-table th { border-bottom: 2px solid var(--line); padding: 12px 16px; color: var(--mute); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.72rem; }
+-.exp-table td { border-bottom: 1px solid var(--line); padding: 14px 16px; color: var(--ink); }
+-.exp-table tr:last-child td { border-bottom: none; }
+-.exp-table b { font-weight: 600; }
+-
+-@media (max-width: 768px) {
+-  .forecast-layout { grid-template-columns: 1fr; }
+-  .top-nav { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+-  .nav-links { flex-wrap: wrap; gap: 8px; }
+-  .forecast-main { padding: 20px 16px; box-sizing: border-box; }
+-  .experiments-main { padding: 20px 16px; box-sizing: border-box; }
+-  .exp-table { display: block; overflow-x: auto; white-space: nowrap; }
+-}
+-
+-/* Agent Command Center */
+-.agent-matrix { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
+-.agent-matrix h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mute); margin: 0 0 8px 0; font-weight: 600; }
+-.agent-status { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; font-size: 0.88rem; color: var(--ink); background: var(--card); border: 1px solid var(--line); cursor: pointer; transition: all 0.2s; }
+-.agent-status:hover { border-color: rgba(99,102,241,0.5); }
+-.agent-status.active { background: rgba(99,102,241,0.1); border-color: var(--brand); }
+-.status-indicator { width: 10px; height: 10px; border-radius: 50%; background: #475569; flex-shrink: 0; }
+-.agent-status.running .status-indicator { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; animation: pulse 1.5s infinite; }
+-.agent-status.done .status-indicator { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
+-
+-@keyframes pulse {
+-  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+-  70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+-  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+-}
+-
+-/* Terminal UI */
+-.terminal-ui { background: #1e1e1e !important; border: 1px solid #333 !important; padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; margin-bottom: 20px; border-radius: 12px; }
+-.terminal-header { background: #2d2d2d; padding: 10px 16px; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid #111; font-size: 0.75rem; color: #888; font-family: monospace; letter-spacing: 0.05em; }
+-.term-dots { display: flex; gap: 6px; }
+-.term-dots i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+-.term-dots i.r { background: #ff5f56; }
+-.term-dots i.y { background: #ffbd2e; }
+-.term-dots i.g { background: #27c93f; }
+-.terminal-body { padding: 16px; height: 260px; overflow-y: auto; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.85rem; color: #e2e8f0; display: flex; flex-direction: column; gap: 8px; }
+-.term-log { display: flex; gap: 8px; line-height: 1.4; word-break: break-word; }
+-.term-log.running { color: #94a3b8; }
+-.term-log.done { color: #f8fafc; }
+-.term-agent { color: #38bdf8; font-weight: 600; white-space: nowrap; }
++@media(prefers-reduced-motion:reduce){.spin,.skel i{animation:none}}
+diff --git a/web/src/pages/Forecast.jsx b/web/src/pages/Forecast.jsx
+index 37c5a33..e5aad35 100644
+--- a/web/src/pages/Forecast.jsx
++++ b/web/src/pages/Forecast.jsx
+@@ -1,197 +1,138 @@
+-import React, { useState, useEffect, useRef } from 'react';
++import React, { useState, useEffect } from 'react';
+ import Plot from 'react-plotly.js';
+-import { Play, ShieldCheck, TrendingUp, Loader2 } from 'lucide-react';
++import { Search, TrendingUp, TrendingDown, Minus, Check, Loader2, Info } from 'lucide-react';
+ import { useMarketData } from '../hooks/useMarketData';
+ import { useForecastStream } from '../hooks/useForecastStream';
+ 
+-const PRESETS = ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'SBIN.NS', 'MARUTI.NS'];
++const STOCKS = [['RELIANCE', 'Reliance Industries'], ['TCS', 'TCS'], ['HDFCBANK', 'HDFC Bank'], ['INFY', 'Infosys'], ['ICICIBANK', 'ICICI Bank'], ['SBIN', 'State Bank of India'], ['BHARTIARTL', 'Bharti Airtel'], ['ITC', 'ITC'], ['LT', 'Larsen & Toubro'], ['MARUTI', 'Maruti Suzuki'], ['TITAN', 'Titan'], ['WIPRO', 'Wipro']];
++const NAME = Object.fromEntries(STOCKS);
++const STEPS = ['Reading price charts', 'Checking company health', 'Scanning the news', 'Reviewing the economy', 'Fact-checking the numbers', 'Bulls and bears debate', 'Making the final call'];
++const VIEW = { buy: { Icon: TrendingUp, line: 'We expect the price to rise over the next month.' }, sell: { Icon: TrendingDown, line: 'We expect the price to fall over the next month.' }, hold: { Icon: Minus, line: 'We expect little change over the next month.' } };
+ const inr = (v) => (v == null || isNaN(v) ? '—' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(v));
+-const dark = () => window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+-const getFutureDateStr = (dateStr, days) => {
+-  const d = new Date(dateStr);
+-  d.setDate(d.getDate() + days);
+-  return d.toISOString().split('T')[0];
+-};
+-
+-const AGENTS = [
+-  { id: 'technical', name: 'Technical Analyst' },
+-  { id: 'fundamental', name: 'Fundamental Analyst' },
+-  { id: 'sentiment', name: 'Sentiment Analyst' },
+-  { id: 'macro', name: 'Macro Analyst' },
+-  { id: 'debate', name: 'Adversarial Debate Engine' },
+-  { id: 'final', name: 'Chief Risk Officer' }
+-];
++const base = (t) => t.replace(/\.(NS|BO)$/, '');
++const rsiWord = (v) => (v == null ? 'Not available' : v < 30 ? 'Cheap (oversold)' : v > 70 ? 'Overheated' : 'Normal');
++const trendWord = (b) => (!b ? 'Not available' : /bull|up|positive/i.test(b) ? 'Rising' : /bear|down|negative/i.test(b) ? 'Falling' : 'Flat');
++const confWord = (p) => (p >= 70 ? 'High' : p >= 45 ? 'Medium' : 'Low');
++const cite = (c) => (typeof c === 'string' ? { text: c } : { text: c.title || c.source || c.label || 'Source', url: c.url || c.link });
++const lastWeekday = () => { const d = new Date(); do { d.setDate(d.getDate() - 1); } while ([0, 6].includes(d.getDay())); return d.toLocaleDateString('en-CA'); };
++function useDark() {
++  const q = window.matchMedia?.('(prefers-color-scheme: dark)');
++  const [d, setD] = useState(!!q?.matches);
++  useEffect(() => { if (!q) return; const f = (e) => setD(e.matches); q.addEventListener('change', f); return () => q.removeEventListener('change', f); }, []);
++  return d;
++}
+ 
+-export default function Forecast() {
++export default function Forecast({ research }) {
+   const [ticker, setTicker] = useState('RELIANCE.NS');
+-  
+-  // Format today's date as YYYY-MM-DD
+-  const today = new Date().toLocaleDateString('en-CA');
+-  const [asOf, setAsOf] = useState(today);
+-  
++  const [q, setQ] = useState('');
++  const [asOf, setAsOf] = useState(lastWeekday());
+   const [debateOn, setDebateOn] = useState(true);
+-  const [activeAgent, setActiveAgent] = useState(null);
+-  const terminalRef = useRef(null);
+-
++  const isDark = useDark();
+   const { data, loading, error: dataErr } = useMarketData(ticker, asOf);
+   const { isRunning, progress, logs, debate, forecast, error: streamErr, startForecast } = useForecastStream();
+-  const ev = data?.evidence;
+-  const candles = data?.price?.candles;
+-  const fg = dark() ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+-  const sig = forecast?.signal?.toLowerCase();
+ 
+-  useEffect(() => {
+-    if (terminalRef.current) {
+-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+-    }
+-  }, [logs]);
+-
+-  const getAgentState = (agentId) => {
+-    const searchId = agentId === 'final' ? 'final' : agentId;
+-    const doneLog = logs.find(l => l.toLowerCase().includes(`[done] ${searchId}`));
+-    if (doneLog) return 'done';
+-    const runningLog = logs.find(l => l.toLowerCase().includes(`[running] ${searchId}`));
+-    if (runningLog) return 'running';
+-    return 'waiting';
+-  };
+-
+-  const terminalLogs = logs.filter(l => {
+-    if (!activeAgent) return true;
+-    return l.toLowerCase().includes(activeAgent);
+-  });
+-
+-  const targetShapes = forecast ? [{
+-    type: 'rect',
+-    xref: 'x', yref: 'y',
+-    x0: asOf,
+-    x1: getFutureDateStr(asOf, 30),
+-    y0: forecast.target_low_inr,
+-    y1: forecast.target_high_inr,
+-    fillcolor: 'rgba(99, 102, 241, 0.15)',
+-    line: { color: 'rgba(99, 102, 241, 0.5)', width: 1, dash: 'dot' }
+-  }] : [];
++  const ev = data?.evidence, candles = data?.price?.candles;
++  const hits = q.trim() ? STOCKS.filter(([s, n]) => (s + n).toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6) : [];
++  const pick = (s) => { setTicker(s.includes('.') ? s : `${s}.NS`); setQ(''); };
++  const steps = debateOn ? STEPS : STEPS.filter((_, i) => i !== 5);
++  const done = Math.round((progress / 100) * steps.length);
++  const sig = forecast?.signal?.toLowerCase();
++  const V = VIEW[sig];
++  const grid = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
++  const bulls = (debate || []).filter((t) => t.position === 'bull'), bears = (debate || []).filter((t) => t.position === 'bear');
++  const err = dataErr || streamErr;
++  const price = ev?.last_close;
++  const last = candles?.[candles.length - 1]?.date;
++  const proj = forecast && last ? (() => { const e = new Date(last); e.setDate(e.getDate() + 30); return e.toISOString().slice(0, 10); })() : null;
+ 
+   return (
+-    <div className="forecast-layout">
+-      <aside className="side">
+-        <label>Ticker</label>
+-        <input type="text" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} />
+-        <div className="chips">{PRESETS.map((p) => <button key={p} className="chip" onClick={() => setTicker(p)}>{p.replace('.NS', '')}</button>)}</div>
+-
+-        <label>As-of date</label>
+-        <input type="date" value={asOf} onChange={(e) => setAsOf(e.target.value)} />
+-
+-        <div className="switch" onClick={() => setDebateOn(!debateOn)}>
+-          <div>Bull–Bear debate<small>Turn off for the ablation</small></div>
+-          <div className={`tog ${debateOn ? 'on' : ''}`} />
++    <div className="page">
++      <section className="hero">
++        <h1>Should you buy, hold or sell?</h1>
++        <p>Pick an Indian stock. Our team of AI analysts reviews the price, the company, the news and the economy, then gives a clear view.</p>
++        <div className="search">
++          <Search size={18} />
++          <input aria-label="Search company or symbol" placeholder="Search a company, e.g. Infosys" value={q} onChange={(e) => setQ(e.target.value)}
++            onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) pick(hits[0]?.[0] || q.trim().toUpperCase()); }} />
++          {hits.length > 0 && <ul className="sug">{hits.map(([s, n]) => <li key={s}><button onClick={() => pick(s)}>{n}<small>{s}</small></button></li>)}</ul>}
+         </div>
++        <div className="chips">{STOCKS.slice(0, 8).map(([s, n]) => <button key={s} className={`chip ${base(ticker) === s ? 'on' : ''}`} onClick={() => pick(s)}>{n}</button>)}</div>
++        {research && (
++          <div className="rbar">
++            <label>As-of date <input type="date" max={new Date().toLocaleDateString('en-CA')} value={asOf} onChange={(e) => setAsOf(e.target.value)} /></label>
++            <label><input type="checkbox" checked={debateOn} onChange={(e) => setDebateOn(e.target.checked)} /> Bull–Bear debate</label>
++          </div>
++        )}
++      </section>
+ 
+-        <button className="run" disabled={isRunning} onClick={() => startForecast(ticker, asOf, debateOn, [])}>
+-          {isRunning ? <><Loader2 size={17} className="spin" /> Analysing…</> : <><Play size={16} /> Run forecast</>}
++      <div className="titlerow">
++        <div><h2>{NAME[base(ticker)] || base(ticker)}</h2><span>{base(ticker)} · NSE</span></div>
++        <button className="go" disabled={isRunning} onClick={() => startForecast(ticker, asOf, debateOn, [])}>
++          {isRunning ? <><Loader2 size={17} className="spin" /> Analysing…</> : 'Get forecast'}
+         </button>
+-
+-        <div className="agent-matrix">
+-          <h4>Agent Command Center</h4>
+-          {AGENTS.filter(a => debateOn || a.id !== 'debate').map(agent => (
+-            <div 
+-              key={agent.id} 
+-              className={`agent-status ${getAgentState(agent.id)} ${activeAgent === agent.id ? 'active' : ''}`} 
+-              onClick={() => setActiveAgent(activeAgent === agent.id ? null : agent.id)}
+-            >
+-              <span className="status-indicator"></span>
+-              {agent.name}
+-            </div>
+-          ))}
++      </div>
++
++      {err && <div className="err" role="alert">We couldn’t complete that. Please check the company name and try again.{research && <small> {String(err)}</small>}
++        <button onClick={() => startForecast(ticker, asOf, debateOn, [])}>Try again</button></div>}
++
++      {loading && !ev && <div className="skel"><i /><i /><i /></div>}
++      {ev && (
++        <div className="kpis">
++          <div className="kpi"><small>Latest price</small><b>{inr(price)}</b></div>
++          <div className="kpi"><small>Price momentum</small><b>{rsiWord(ev.indicators?.rsi_14?.value)}</b></div>
++          <div className="kpi"><small>Recent trend</small><b>{trendWord(ev.indicators?.macd?.bias)}</b></div>
++          <div className="kpi"><small>Vs Nifty 50 (1 month)</small><b>{ev.benchmark?.return_21d_pct != null ? `${ev.benchmark.return_21d_pct > 0 ? '+' : ''}${ev.benchmark.return_21d_pct}%` : '—'}</b></div>
+         </div>
+-      </aside>
+-
+-      <main className="forecast-main">
+-        <div className="head">
+-          <div><h2>{ticker}</h2><span>Evidence as of {asOf}</span></div>
+-          <span className="badge"><ShieldCheck size={14} /> No data after {asOf}</span>
++      )}
++      {candles && (
++        <div className="card"><h3>Price history{proj && ' · shaded area = our likely range for the next month'}</h3>
++          <Plot data={[{ type: 'candlestick', x: candles.map((c) => c.date), open: candles.map((c) => c.open), high: candles.map((c) => c.high), low: candles.map((c) => c.low), close: candles.map((c) => c.close), increasing: { line: { color: '#10b981' } }, decreasing: { line: { color: '#ef4444' } } }]}
++            layout={{ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { color: isDark ? '#e8ecf7' : '#0f172a', family: 'Inter' }, margin: { t: 6, l: 46, r: 8, b: 28 }, height: 320, shapes: proj ? [{ type: 'rect', xref: 'x', yref: 'y', x0: last, x1: proj, y0: forecast.target_low_inr, y1: forecast.target_high_inr, fillcolor: 'rgba(99,102,241,.28)', line: { width: 0 } }] : [], xaxis: { rangeslider: { visible: false }, gridcolor: grid, ...(proj ? { range: [candles[Math.max(0, candles.length - 90)].date, proj] } : {}) }, yaxis: { gridcolor: grid } }}
++            config={{ displayModeBar: false, responsive: true }} useResizeHandler style={{ width: '100%' }} />
+         </div>
++      )}
+ 
+-        {(dataErr || streamErr) && <div className="err">{dataErr || streamErr}</div>}
+-
+-        {ev && (!activeAgent || activeAgent !== 'sentiment') && (
+-          <div className="kpis">
+-            <div className="kpi"><small>Last close</small><b>{inr(ev.last_close)}</b></div>
+-            <div className="kpi"><small>RSI (14)</small><b>{ev.indicators?.rsi_14?.value ?? 'N/A'}</b></div>
+-            <div className="kpi"><small>MACD bias</small><b style={{ textTransform: 'capitalize' }}>{ev.indicators?.macd?.bias ?? 'N/A'}</b></div>
+-            <div className="kpi"><small>21d vs NIFTY</small><b>{ev.benchmark?.return_21d_pct ?? 'N/A'}%</b></div>
+-          </div>
+-        )}
+-
+-        {candles && (!activeAgent || activeAgent === 'technical' || activeAgent === 'final') && (
+-          <div className="card">
+-            <h3><TrendingUp size={13} style={{ verticalAlign: -2 }} /> Price history {forecast && '(+ 21d Target Projection)'}</h3>
+-            <Plot
+-              data={[{ type: 'candlestick', x: candles.map((c) => c.date), open: candles.map((c) => c.open), high: candles.map((c) => c.high), low: candles.map((c) => c.low), close: candles.map((c) => c.close), increasing: { line: { color: '#10b981' } }, decreasing: { line: { color: '#ef4444' } } }]}
+-              layout={{ shapes: targetShapes, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { color: dark() ? '#e8ecf7' : '#0f172a', family: 'Inter' }, margin: { t: 6, l: 46, r: 8, b: 28 }, height: 330, xaxis: { rangeslider: { visible: false }, gridcolor: fg }, yaxis: { gridcolor: fg } }}
+-              config={{ displayModeBar: false, responsive: true }} useResizeHandler style={{ width: '100%' }} />
++      {(isRunning || logs.length > 0) && (
++        <div className="card"><h3>What our analysts are doing</h3>
++          <ol className="steps">{steps.map((s, i) => <li key={s} className={i < done ? 'ok' : i === done && isRunning ? 'now' : ''}>
++            {i < done ? <Check size={16} /> : i === done && isRunning ? <Loader2 size={16} className="spin" /> : <span className="dot" />}{s}</li>)}</ol>
++          {research && <details><summary>Technical log</summary><pre className="log">{logs.join('\n')}</pre></details>}
++        </div>
++      )}
++
++      {forecast && V && (
++        <div className="result">
++          <div className={`sig ${sig}`}>
++            <V.Icon size={34} aria-hidden="true" />
++            <div className="w">{forecast.signal}</div>
++            <p>{V.line}</p>
++            <div className="rng"><small>Likely price range</small>{inr(forecast.target_low_inr)} – {inr(forecast.target_high_inr)}</div>
++            <div className="conf" role="img" aria-label={`Confidence ${forecast.confidence_pct}%`}><i style={{ width: `${forecast.confidence_pct ?? 0}%` }} /></div>
++            <small>{confWord(forecast.confidence_pct)} confidence ({forecast.confidence_pct ?? '—'}%)</small>
+           </div>
+-        )}
+-        
+-        {loading && !data && <div className="empty">Loading evidence…</div>}
+-
+-        {(isRunning || logs.length > 0) && (
+-          <div className="terminal-ui card">
+-            <div className="terminal-header">
+-              <div className="term-dots"><i className="r"></i><i className="y"></i><i className="g"></i></div>
+-              <span>Live Reasoning Trace {activeAgent ? `[FILTERED: ${activeAgent.toUpperCase()}]` : ''}</span>
+-            </div>
+-            <div className="terminal-body" ref={terminalRef}>
+-              {terminalLogs.map((log, i) => {
+-                const match = log.match(/\[(.*?)\] (.*?) - (.*)/) || log.match(/\[(.*?)\] (.*?)\.\.\./);
+-                if (match) {
+-                  const [, status, agent, msg] = match;
+-                  return (
+-                    <div key={i} className={`term-log ${status.toLowerCase()}`}>
+-                      <span className="term-agent">[{agent.toUpperCase()}]:</span> {msg || 'Processing...'}
+-                    </div>
+-                  );
+-                }
+-                return <div key={i} className="term-log">{log}</div>;
+-              })}
+-            </div>
++          <div className="card"><h3>Why we think so</h3><p className="reason">{forecast.reasoning}</p>
++            {forecast.key_risks?.length > 0 && <><h3 style={{ marginTop: 18 }}>What could go wrong</h3>
++              <ul className="risks">{forecast.key_risks.map((r, i) => <li key={i}>{typeof r === 'string' ? r : JSON.stringify(r)}</li>)}</ul></>}
+           </div>
+-        )}
+-
+-        {forecast && (!activeAgent || activeAgent === 'final') && (
+-          <div className="result">
+-            <div className={`sig ${sig}`}>
+-              <div className="w">{forecast.signal}</div>
+-              <div className="rng">{inr(forecast.target_low_inr)} – {inr(forecast.target_high_inr)}</div>
+-              <div className="conf"><i style={{ width: `${forecast.confidence_pct ?? 0}%` }} /></div>
+-              <small>Confidence {forecast.confidence_pct ?? '—'}% · expects {forecast.expected_direction}</small>
+-            </div>
+-            <div className="card">
+-              <h3>Reasoning</h3>
+-              <p className="reason">{forecast.reasoning}</p>
+-              {forecast.key_risks?.length > 0 && <div className="risks">{forecast.key_risks.map((r, i) => <span key={i} className="risk">{typeof r === 'string' ? r : JSON.stringify(r)}</span>)}</div>}
+-            </div>
+-          </div>
+-        )}
++        </div>
++      )}
+ 
+-        {debate?.length > 0 && (!activeAgent || activeAgent === 'debate') && (
+-          <div className="card">
+-            <h3>Bull vs Bear debate</h3>
+-            <div className="debate">
+-              {debate.map((t, i) => (
+-                <div key={i} className={`turn ${t.position}`}>
+-                  <h4>Round {t.round_number} · {t.position === 'bull' ? '🐂 Bull' : '🐻 Bear'}</h4>
+-                  <ul>{t.points?.map((p, j) => <li key={j}>{p}</li>)}</ul>
+-                </div>
+-              ))}
+-            </div>
++      {(bulls.length > 0 || bears.length > 0) && (
++        <div className="card"><h3>Both sides of the argument</h3>
++          <div className="debate">
++            <div className="turn bull"><h4>The case for buying</h4>{bulls.map((t, i) => <ul key={i}>{t.points?.map((p, j) => <li key={j}>{p}</li>)}</ul>)}</div>
++            <div className="turn bear"><h4>The case against</h4>{bears.map((t, i) => <ul key={i}>{t.points?.map((p, j) => <li key={j}>{p}</li>)}</ul>)}</div>
+           </div>
+-        )}
+-
+-        {ev?.news?.headlines?.length > 0 && (!activeAgent || activeAgent === 'sentiment') && (
+-          <div className="card news"><h3>Headlines up to {asOf}</h3>{ev.news.headlines.slice(0, 5).map((h, i) => <div key={i}>{h.title || h}</div>)}</div>
+-        )}
+-        {!forecast && !isRunning && !candles && !loading && <div className="empty">Pick a ticker and date, then run a forecast.</div>}
+-      </main>
++        </div>
++      )}
++
++      {forecast?.citations?.length > 0 && (
++        <div className="card"><h3>Where this comes from</h3><ul className="src">{forecast.citations.slice(0, 8).map((c, i) => { const x = cite(c); return <li key={i}>{x.url ? <a href={x.url} target="_blank" rel="noreferrer">{x.text}</a> : x.text}</li>; })}</ul></div>
++      )}
++      {ev?.news?.headlines?.length > 0 && (
++        <div className="card"><h3>Recent news we looked at</h3><ul className="src">{ev.news.headlines.slice(0, 5).map((h, i) => <li key={i}>{h.title || h}</li>)}</ul></div>
++      )}
++      {!forecast && !isRunning && <p className="hint"><Info size={14} /> Press “Get forecast” and wait about a minute while the analysts work.</p>}
+     </div>
+   );
+ }
