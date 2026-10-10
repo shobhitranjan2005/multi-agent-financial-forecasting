@@ -1,0 +1,220 @@
+diff --git a/backend/api/main.py b/backend/api/main.py
+index c66f33f..74e17c8 100644
+--- a/backend/api/main.py
++++ b/backend/api/main.py
+@@ -150,6 +150,16 @@ def _parse_date(value: str) -> date:
+ # ---------------------------------------------------------------------------
+ # endpoints
+ # ---------------------------------------------------------------------------
++@app.get("/api/search")
++def search_companies(q: str = "", limit: int = 8):
++    """Company search over every listed NSE equity (names from the NSE bhavcopy)."""
++    from backend.tools import tickers as _tickers
++    try:
++        return {"results": _tickers.search_companies(q, max(1, min(limit, 15)))}
++    except Exception:
++        return {"results": []}
++
++
+ @app.get("/api/health")
+ def health() -> dict:
+     """Liveness, plus what the system can currently do.
+diff --git a/backend/tools/tickers.py b/backend/tools/tickers.py
+index bf2841b..9977635 100644
+--- a/backend/tools/tickers.py
++++ b/backend/tools/tickers.py
+@@ -65,6 +65,13 @@ def _build_symbol_master() -> set[str]:
+         with z.open(z.namelist()[0]) as fh:
+             df = pd.read_csv(fh)
+     eq = df[(df["SctySrs"] == "EQ") & (df["FinInstrmTp"] == "STK")]
++    if "FinInstrmNm" in eq.columns:   # keep company names for the search box (best effort)
++        try:
++            names = {str(r.TckrSymb).upper(): str(r.FinInstrmNm) for r in eq.itertuples()}
++            Config.ensure_dirs()
++            (Config.DATA_DIR / "nse_names.json").write_text(json.dumps(names), encoding="utf-8")
++        except Exception:
++            pass
+     return {str(s).upper() for s in eq["TckrSymb"].unique()}
+ 
+ 
+@@ -192,3 +199,60 @@ def base_symbol(ticker: str) -> str:
+ def exchange(ticker: str) -> str:
+     """'NSE' or 'BSE'."""
+     return "NSE" if resolve(ticker, verify=False).endswith(".NS") else "BSE"
++
++
++# --------------------------------------------------------------------------
++# Company search (powers the UI search box)
++# --------------------------------------------------------------------------
++import re as _re
++
++_LEGAL = _re.compile(r"\s+(limited|ltd\.?)\s*$", _re.I)
++
++
++def load_nse_names() -> dict[str, str]:
++    """symbol -> company name from the NSE bhavcopy. {} if it cannot be obtained."""
++    path = Config.DATA_DIR / "nse_names.json"
++    if not path.exists():
++        try:
++            _build_symbol_master()      # writes nse_names.json as a side effect
++        except Exception:
++            return {}
++    try:
++        return json.loads(path.read_text(encoding="utf-8"))
++    except Exception:
++        return {}
++
++
++def _friendly(sym: str, raw: str) -> str:
++    from backend.tools.news_sentiment import NEWS_ALIASES   # lazy: avoids an import cycle
++    if sym in NEWS_ALIASES:
++        return NEWS_ALIASES[sym][0]
++    return _LEGAL.sub("", raw.title()) if raw else sym
++
++
++def search_companies(q: str, limit: int = 8) -> list[dict]:
++    """Match a typed company name or symbol against every listed NSE equity."""
++    from backend.tools.news_sentiment import NEWS_ALIASES
++    q = q.strip().lower()
++    if not q:
++        return []
++    names = load_nse_names()
++    syms = set(names) | set(load_nse_symbols()) | set(NEWS_ALIASES)
++    ranked = []
++    for sym in syms:
++        raw = names.get(sym, "")
++        nm = _friendly(sym, raw)
++        sl, nl = sym.lower(), nm.lower()
++        if sl == q:
++            rank = 0
++        elif nl.startswith(q):
++            rank = 1
++        elif sl.startswith(q):
++            rank = 2
++        elif q in nl or q in raw.lower():
++            rank = 3
++        else:
++            continue
++        ranked.append((rank, len(sym), sym, nm))
++    ranked.sort()
++    return [{"symbol": s_, "name": n_} for _, _, s_, n_ in ranked[:limit]]
+diff --git a/tests/test_search.py b/tests/test_search.py
+new file mode 100644
+index 0000000..ad79f8a
+--- /dev/null
++++ b/tests/test_search.py
+@@ -0,0 +1,19 @@
++from backend.tools import tickers
++
++
++def _fake(monkeypatch):
++    monkeypatch.setattr(tickers, "load_nse_names", lambda: {"ZOMATO": "ZOMATO LTD", "INFY": "INFOSYS LTD", "IRCTC": "INDIAN RAILWAY CATERING AND TOURISM CORPORATION LTD"})
++    monkeypatch.setattr(tickers, "load_nse_symbols", lambda *a, **k: {"ZOMATO", "INFY", "IRCTC"})
++
++
++def test_finds_any_listed_company_by_name_or_symbol(monkeypatch):
++    _fake(monkeypatch)
++    assert tickers.search_companies("zom")[0] == {"symbol": "ZOMATO", "name": "Zomato"}
++    assert tickers.search_companies("railway")[0]["symbol"] == "IRCTC"
++    assert tickers.search_companies("irctc")[0]["symbol"] == "IRCTC"
++
++
++def test_curated_friendly_name_wins_and_nonsense_returns_nothing(monkeypatch):
++    _fake(monkeypatch)
++    assert tickers.search_companies("infosys")[0] == {"symbol": "INFY", "name": "Infosys"}
++    assert tickers.search_companies("qqqqzz") == [] and tickers.search_companies("  ") == []
+diff --git a/web/src/index.css b/web/src/index.css
+index b3b3784..e1c63dc 100644
+--- a/web/src/index.css
++++ b/web/src/index.css
+@@ -35,3 +35,8 @@ footer{padding:18px 24px;text-align:center;font-size:.78rem;color:var(--mute);bo
+ .hint{display:flex;gap:6px;align-items:center;justify-content:center;color:var(--mute);font-size:.88rem}
+ @keyframes sp{to{transform:rotate(360deg)}}.spin{animation:sp 1s linear infinite}
+ @media(prefers-reduced-motion:reduce){.spin,.skel i{animation:none}}
++
++.kpi em{display:block;font-style:normal;color:var(--mute);font-size:.74rem;margin-top:2px}
++.datebar{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:18px;font-size:.88rem;color:var(--mute)}
++.datebar input{margin-left:8px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:inherit}
++.datebar small{font-size:.78rem}
+diff --git a/web/src/pages/Forecast.jsx b/web/src/pages/Forecast.jsx
+index e5aad35..7e5c961 100644
+--- a/web/src/pages/Forecast.jsx
++++ b/web/src/pages/Forecast.jsx
+@@ -32,8 +32,18 @@ export default function Forecast({ research }) {
+   const { isRunning, progress, logs, debate, forecast, error: streamErr, startForecast } = useForecastStream();
+ 
+   const ev = data?.evidence, candles = data?.price?.candles;
+-  const hits = q.trim() ? STOCKS.filter(([s, n]) => (s + n).toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6) : [];
+-  const pick = (s) => { setTicker(s.includes('.') ? s : `${s}.NS`); setQ(''); };
++  const [hits, setHits] = useState([]);
++  const [selName, setSelName] = useState('');
++  useEffect(() => { // search every NSE company on the server; fall back to the built-in list if offline
++    const term = q.trim();
++    if (!term) { setHits([]); return; }
++    const local = STOCKS.filter(([s, n]) => (s + n).toLowerCase().includes(term.toLowerCase())).slice(0, 6).map(([symbol, name]) => ({ symbol, name }));
++    const t = setTimeout(async () => {
++      try { const r = await fetch(`http://localhost:8000/api/search?q=${encodeURIComponent(term)}`); const j = await r.json(); setHits(j.results?.length ? j.results : local); } catch { setHits(local); }
++    }, 250);
++    return () => clearTimeout(t);
++  }, [q]);
++  const pick = (s, n) => { setTicker(s.includes('.') ? s : `${s}.NS`); setSelName(n || NAME[s] || ''); setQ(''); };
+   const steps = debateOn ? STEPS : STEPS.filter((_, i) => i !== 5);
+   const done = Math.round((progress / 100) * steps.length);
+   const sig = forecast?.signal?.toLowerCase();
+@@ -42,6 +52,11 @@ export default function Forecast({ research }) {
+   const bulls = (debate || []).filter((t) => t.position === 'bull'), bears = (debate || []).filter((t) => t.position === 'bear');
+   const err = dataErr || streamErr;
+   const price = ev?.last_close;
++  const closes = (candles || []).map((c) => c.close);
++  const stockRet = closes.length > 21 ? (closes[closes.length - 1] / closes[closes.length - 22] - 1) * 100 : null;
++  const niftyRet = ev?.benchmark?.return_21d_pct;
++  const pct = (v) => (v == null || isNaN(v) ? '—' : `${v > 0 ? '+' : ''}${Number(v).toFixed(2)}%`);
++  const gap = stockRet != null && niftyRet != null ? stockRet - niftyRet : null;
+   const last = candles?.[candles.length - 1]?.date;
+   const proj = forecast && last ? (() => { const e = new Date(last); e.setDate(e.getDate() + 30); return e.toISOString().slice(0, 10); })() : null;
+ 
+@@ -52,21 +67,20 @@ export default function Forecast({ research }) {
+         <p>Pick an Indian stock. Our team of AI analysts reviews the price, the company, the news and the economy, then gives a clear view.</p>
+         <div className="search">
+           <Search size={18} />
+-          <input aria-label="Search company or symbol" placeholder="Search a company, e.g. Infosys" value={q} onChange={(e) => setQ(e.target.value)}
+-            onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) pick(hits[0]?.[0] || q.trim().toUpperCase()); }} />
+-          {hits.length > 0 && <ul className="sug">{hits.map(([s, n]) => <li key={s}><button onClick={() => pick(s)}>{n}<small>{s}</small></button></li>)}</ul>}
++          <input aria-label="Search company or symbol" placeholder="Search any NSE company, e.g. Zomato" value={q} onChange={(e) => setQ(e.target.value)}
++            onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) pick(hits[0]?.symbol || q.trim().toUpperCase(), hits[0]?.name); }} />
++          {hits.length > 0 && <ul className="sug">{hits.map((h) => <li key={h.symbol}><button onClick={() => pick(h.symbol, h.name)}>{h.name}<small>{h.symbol}</small></button></li>)}</ul>}
+         </div>
+         <div className="chips">{STOCKS.slice(0, 8).map(([s, n]) => <button key={s} className={`chip ${base(ticker) === s ? 'on' : ''}`} onClick={() => pick(s)}>{n}</button>)}</div>
+-        {research && (
+-          <div className="rbar">
+-            <label>As-of date <input type="date" max={new Date().toLocaleDateString('en-CA')} value={asOf} onChange={(e) => setAsOf(e.target.value)} /></label>
+-            <label><input type="checkbox" checked={debateOn} onChange={(e) => setDebateOn(e.target.checked)} /> Bull–Bear debate</label>
+-          </div>
+-        )}
++        <div className="datebar">
++          <label>Analysis date <input type="date" max={new Date().toLocaleDateString('en-CA')} value={asOf} onChange={(e) => e.target.value && setAsOf(e.target.value)} /></label>
++          <small>Pick a past date to see what our analysts would have said on that day.</small>
++        </div>
++        {research && <div className="rbar"><label><input type="checkbox" checked={debateOn} onChange={(e) => setDebateOn(e.target.checked)} /> Bull–Bear debate</label></div>}
+       </section>
+ 
+       <div className="titlerow">
+-        <div><h2>{NAME[base(ticker)] || base(ticker)}</h2><span>{base(ticker)} · NSE</span></div>
++        <div><h2>{selName || NAME[base(ticker)] || base(ticker)}</h2><span>{base(ticker)} · NSE · analysis as of {asOf}</span></div>
+         <button className="go" disabled={isRunning} onClick={() => startForecast(ticker, asOf, debateOn, [])}>
+           {isRunning ? <><Loader2 size={17} className="spin" /> Analysing…</> : 'Get forecast'}
+         </button>
+@@ -78,10 +92,11 @@ export default function Forecast({ research }) {
+       {loading && !ev && <div className="skel"><i /><i /><i /></div>}
+       {ev && (
+         <div className="kpis">
+-          <div className="kpi"><small>Latest price</small><b>{inr(price)}</b></div>
++          <div className="kpi"><small>Price on {asOf}</small><b>{inr(price)}</b></div>
++          <div className="kpi"><small>This stock, last month</small><b>{pct(stockRet)}</b>{gap != null && <em>{gap >= 0 ? 'Ahead of' : 'Behind'} Nifty by {Math.abs(gap).toFixed(2)} pts</em>}</div>
++          <div className="kpi"><small>Nifty 50, last month</small><b>{pct(niftyRet)}</b><em>Whole market, same for every stock</em></div>
+           <div className="kpi"><small>Price momentum</small><b>{rsiWord(ev.indicators?.rsi_14?.value)}</b></div>
+           <div className="kpi"><small>Recent trend</small><b>{trendWord(ev.indicators?.macd?.bias)}</b></div>
+-          <div className="kpi"><small>Vs Nifty 50 (1 month)</small><b>{ev.benchmark?.return_21d_pct != null ? `${ev.benchmark.return_21d_pct > 0 ? '+' : ''}${ev.benchmark.return_21d_pct}%` : '—'}</b></div>
+         </div>
+       )}
+       {candles && (

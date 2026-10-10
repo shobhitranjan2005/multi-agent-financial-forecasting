@@ -155,6 +155,16 @@ def _parse_date(value: str) -> date:
 # ---------------------------------------------------------------------------
 # endpoints
 # ---------------------------------------------------------------------------
+@app.get("/api/search")
+def search_companies(q: str = "", limit: int = 8):
+    """Company search over every listed NSE equity (names from the NSE bhavcopy)."""
+    from backend.tools import tickers as _tickers
+    try:
+        return {"results": _tickers.search_companies(q, max(1, min(limit, 15)))}
+    except Exception:
+        return {"results": []}
+
+
 @app.get("/api/health")
 def health() -> dict:
     """Liveness, plus what the system can currently do.

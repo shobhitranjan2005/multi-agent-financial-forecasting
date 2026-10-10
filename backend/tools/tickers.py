@@ -65,6 +65,13 @@ def _build_symbol_master() -> set[str]:
         with z.open(z.namelist()[0]) as fh:
             df = pd.read_csv(fh)
     eq = df[(df["SctySrs"] == "EQ") & (df["FinInstrmTp"] == "STK")]
+    if "FinInstrmNm" in eq.columns:   # keep company names for the search box (best effort)
+        try:
+            names = {str(r.TckrSymb).upper(): str(r.FinInstrmNm) for r in eq.itertuples()}
+            Config.ensure_dirs()
+            (Config.DATA_DIR / "nse_names.json").write_text(json.dumps(names), encoding="utf-8")
+        except Exception:
+            pass
     return {str(s).upper() for s in eq["TckrSymb"].unique()}
 
 
@@ -192,3 +199,60 @@ def base_symbol(ticker: str) -> str:
 def exchange(ticker: str) -> str:
     """'NSE' or 'BSE'."""
     return "NSE" if resolve(ticker, verify=False).endswith(".NS") else "BSE"
+
+
+# --------------------------------------------------------------------------
+# Company search (powers the UI search box)
+# --------------------------------------------------------------------------
+import re as _re
+
+_LEGAL = _re.compile(r"\s+(limited|ltd\.?)\s*$", _re.I)
+
+
+def load_nse_names() -> dict[str, str]:
+    """symbol -> company name from the NSE bhavcopy. {} if it cannot be obtained."""
+    path = Config.DATA_DIR / "nse_names.json"
+    if not path.exists():
+        try:
+            _build_symbol_master()      # writes nse_names.json as a side effect
+        except Exception:
+            return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _friendly(sym: str, raw: str) -> str:
+    from backend.tools.news_sentiment import NEWS_ALIASES   # lazy: avoids an import cycle
+    if sym in NEWS_ALIASES:
+        return NEWS_ALIASES[sym][0]
+    return _LEGAL.sub("", raw.title()) if raw else sym
+
+
+def search_companies(q: str, limit: int = 8) -> list[dict]:
+    """Match a typed company name or symbol against every listed NSE equity."""
+    from backend.tools.news_sentiment import NEWS_ALIASES
+    q = q.strip().lower()
+    if not q:
+        return []
+    names = load_nse_names()
+    syms = set(names) | set(load_nse_symbols()) | set(NEWS_ALIASES)
+    ranked = []
+    for sym in syms:
+        raw = names.get(sym, "")
+        nm = _friendly(sym, raw)
+        sl, nl = sym.lower(), nm.lower()
+        if sl == q:
+            rank = 0
+        elif nl.startswith(q):
+            rank = 1
+        elif sl.startswith(q):
+            rank = 2
+        elif q in nl or q in raw.lower():
+            rank = 3
+        else:
+            continue
+        ranked.append((rank, len(sym), sym, nm))
+    ranked.sort()
+    return [{"symbol": s_, "name": n_} for _, _, s_, n_ in ranked[:limit]]

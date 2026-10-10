@@ -26,19 +26,13 @@ const confWord = (p) => (p >= 70 ? 'High' : p >= 45 ? 'Medium' : 'Low');
 const cite = (c) => (typeof c === 'string' ? { text: c } : { text: c.title || c.source || c.label || 'Source', url: c.url || c.link });
 const lastWeekday = () => { const d = new Date(); do { d.setDate(d.getDate() - 1); } while ([0, 6].includes(d.getDay())); return d.toLocaleDateString('en-CA'); };
 
-function useDark() {
-  const q = window.matchMedia?.('(prefers-color-scheme: dark)');
-  const [d, setD] = useState(!!q?.matches);
-  useEffect(() => { if (!q) return; const f = (e) => setD(e.matches); q.addEventListener('change', f); return () => q.removeEventListener('change', f); }, []);
-  return d;
-}
+
 
 export default function Forecast({ research }) {
   const [ticker, setTicker] = useState('RELIANCE.NS');
   const [q, setQ] = useState('');
   const [asOf, setAsOf] = useState(lastWeekday());
   const [debateOn, setDebateOn] = useState(true);
-  const isDark = useDark();
   const [demoForecast, setDemoForecast] = useState(null);
   
   const { data, loading, error: dataErr } = useMarketData(ticker, asOf);
@@ -46,17 +40,32 @@ export default function Forecast({ research }) {
 
   const forecast = demoForecast || streamForecast;
   const ev = data?.evidence, candles = data?.price?.candles;
-  const hits = q.trim() ? STOCKS.filter(([s, n]) => (s + n).toLowerCase().includes(q.trim().toLowerCase())).slice(0, 6) : [];
-  const pick = (s) => { setTicker(s.includes('.') ? s : `${s}.NS`); setQ(''); setDemoForecast(null); };
+  const [hits, setHits] = useState([]);
+  const [selName, setSelName] = useState('');
+  useEffect(() => { // search every NSE company on the server; fall back to the built-in list if offline
+    const term = q.trim();
+    if (!term) { setHits([]); return; }
+    const local = STOCKS.filter(([s, n]) => (s + n).toLowerCase().includes(term.toLowerCase())).slice(0, 6).map(([symbol, name]) => ({ symbol, name }));
+    const t = setTimeout(async () => {
+      try { const r = await fetch(`http://localhost:8000/api/search?q=${encodeURIComponent(term)}`); const j = await r.json(); setHits(j.results?.length ? j.results : local); } catch { setHits(local); }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [q]);
+  const pick = (s, n) => { setTicker(s.includes('.') ? s : `${s}.NS`); setSelName(n || NAME[s] || ''); setQ(''); setDemoForecast(null); };
   
   const steps = debateOn ? STEPS : STEPS.filter((_, i) => i !== 5);
   const stepKeys = debateOn ? STEP_KEYS : STEP_KEYS.filter((_, i) => i !== 5);
   const sig = forecast?.signal?.toLowerCase();
   const V = VIEW[sig];
-  const grid = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
+  const grid = 'rgba(0,0,0,.05)';
   const bulls = (debate || []).filter((t) => t.position === 'bull'), bears = (debate || []).filter((t) => t.position === 'bear');
   const err = dataErr || streamErr;
   const price = ev?.last_close;
+  const closes = (candles || []).map((c) => c.close);
+  const stockRet = closes.length > 21 ? (closes[closes.length - 1] / closes[closes.length - 22] - 1) * 100 : null;
+  const niftyRet = ev?.benchmark?.return_21d_pct;
+  const pct = (v) => (v == null || isNaN(v) ? '—' : `${v > 0 ? '+' : ''}${Number(v).toFixed(2)}%`);
+  const gap = stockRet != null && niftyRet != null ? stockRet - niftyRet : null;
   const last = candles?.[candles.length - 1]?.date;
   const proj = forecast && last ? (() => { const e = new Date(last); e.setDate(e.getDate() + 30); return e.toISOString().slice(0, 10); })() : null;
 
@@ -108,21 +117,20 @@ export default function Forecast({ research }) {
         <p>Pick an Indian stock. Our team of AI analysts reviews the price, the company, the news and the economy, then gives a clear view.</p>
         <div className="search">
           <Search size={18} />
-          <input aria-label="Search company or symbol" placeholder="Search a company, e.g. Infosys" value={q} onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) { if (hits.length) pick(hits[0][0]); else pick(q.trim().toUpperCase()); } }} />
-          {hits.length > 0 && <ul className="sug">{hits.map(([s, n]) => <li key={s}><button onClick={() => pick(s)}>{n}<small>{s}</small></button></li>)}</ul>}
+          <input aria-label="Search company or symbol" placeholder="Search any NSE company, e.g. Zomato" value={q} onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && q.trim()) pick(hits[0]?.symbol || q.trim().toUpperCase(), hits[0]?.name); }} />
+          {hits.length > 0 && <ul className="sug">{hits.map((h) => <li key={h.symbol}><button onClick={() => pick(h.symbol, h.name)}>{h.name}<small>{h.symbol}</small></button></li>)}</ul>}
         </div>
         <div className="chips">{STOCKS.slice(0, 8).map(([s, n]) => <button key={s} className={`chip ${base(ticker) === s ? 'on' : ''}`} onClick={() => pick(s)}>{n}</button>)}</div>
-        {research && (
-          <div className="rbar">
-            <label>As-of date <input type="date" max={new Date().toLocaleDateString('en-CA')} value={asOf} onChange={(e) => setAsOf(e.target.value)} /></label>
-            <label><input type="checkbox" checked={debateOn} onChange={(e) => setDebateOn(e.target.checked)} /> Bull–Bear debate</label>
-          </div>
-        )}
+        <div className="datebar">
+          <label>Analysis date <input type="date" max={new Date().toLocaleDateString('en-CA')} value={asOf} onChange={(e) => e.target.value && setAsOf(e.target.value)} /></label>
+          <small>Pick a past date to see what our analysts would have said on that day.</small>
+        </div>
+        {research && <div className="rbar"><label><input type="checkbox" checked={debateOn} onChange={(e) => setDebateOn(e.target.checked)} /> Bull–Bear debate</label></div>}
       </section>
 
       <div className="titlerow">
-        <div><h2>{NAME[base(ticker)] || base(ticker)}</h2><span>{base(ticker)} · NSE</span></div>
+        <div><h2>{selName || NAME[base(ticker)] || base(ticker)}</h2><span>{base(ticker)} · NSE · analysis as of {asOf}</span></div>
         <div>
           <button className="demo-btn" disabled={isRunning} onClick={loadDemo} style={{marginRight: '12px', background: 'transparent', border: '1px solid currentColor', color: 'inherit'}}>
             See a sample forecast
@@ -138,16 +146,17 @@ export default function Forecast({ research }) {
       {loading && !ev && <div className="skel"><i /><i /><i /></div>}
       {ev && (
         <div className="kpis">
-          <div className="kpi"><small>Latest price</small><b>{inr(price)}</b></div>
+          <div className="kpi"><small>Price on {asOf}</small><b>{inr(price)}</b></div>
+          <div className="kpi"><small>This stock, last month</small><b>{pct(stockRet)}</b>{gap != null && <em>{gap >= 0 ? 'Ahead of' : 'Behind'} Nifty by {Math.abs(gap).toFixed(2)} pts</em>}</div>
+          <div className="kpi"><small>Nifty 50, last month</small><b>{pct(niftyRet)}</b><em>Whole market, same for every stock</em></div>
           <div className="kpi"><small>Price momentum</small><b>{rsiWord(ev.indicators?.rsi_14?.value)}</b></div>
           <div className="kpi"><small>Recent trend</small><b>{trendWord(ev.indicators?.macd?.bias)}</b></div>
-          <div className="kpi"><small>Vs Nifty 50 (1 month)</small><b>{ev.benchmark?.return_21d_pct != null ? `${ev.benchmark.return_21d_pct > 0 ? '+' : ''}${ev.benchmark.return_21d_pct}%` : '—'}</b></div>
         </div>
       )}
       {candles && (
         <div className="card"><h3>Price history{proj && ' · shaded area = our likely range for the next month'}</h3>
           <Plot data={[{ type: 'candlestick', x: candles.map((c) => c.date), open: candles.map((c) => c.open), high: candles.map((c) => c.high), low: candles.map((c) => c.low), close: candles.map((c) => c.close), increasing: { line: { color: '#10b981' } }, decreasing: { line: { color: '#ef4444' } } }]}
-            layout={{ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { color: isDark ? '#e8ecf7' : '#0f172a', family: 'Inter' }, margin: { t: 6, l: 46, r: 8, b: 28 }, height: 320, shapes: proj ? [{ type: 'rect', xref: 'x', yref: 'y', x0: last, x1: proj, y0: forecast.target_low_inr, y1: forecast.target_high_inr, fillcolor: 'rgba(99,102,241,.28)', line: { width: 0 } }] : [], xaxis: { rangeslider: { visible: false }, gridcolor: grid, ...(proj ? { range: [candles[Math.max(0, candles.length - 90)].date, proj] } : {}) }, yaxis: { gridcolor: grid } }}
+            layout={{ paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { color: '#0f172a', family: 'Inter' }, margin: { t: 6, l: 46, r: 8, b: 28 }, height: 320, shapes: proj ? [{ type: 'rect', xref: 'x', yref: 'y', x0: last, x1: proj, y0: forecast.target_low_inr, y1: forecast.target_high_inr, fillcolor: 'rgba(99,102,241,.15)', line: { width: 0 } }] : [], xaxis: { rangeslider: { visible: false }, gridcolor: grid, ...(proj ? { range: [candles[Math.max(0, candles.length - 90)].date, proj] } : {}) }, yaxis: { gridcolor: grid } }}
             config={{ displayModeBar: false, responsive: true }} useResizeHandler style={{ width: '100%' }} />
         </div>
       )}
