@@ -1,3 +1,4 @@
+import { WS } from '../api';
 import { useState, useCallback, useRef } from 'react';
 
 export function useForecastStream() {
@@ -19,7 +20,7 @@ export function useForecastStream() {
     setForecast(null);
     setError(null);
 
-    const wsUrl = `ws://localhost:8000/api/stream/${ticker}`;
+    const wsUrl = `${WS}/api/stream/${ticker}`;
     ws.current = new WebSocket(wsUrl);
 
     let doneStages = 0;

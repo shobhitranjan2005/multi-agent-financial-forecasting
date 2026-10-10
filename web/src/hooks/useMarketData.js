@@ -1,3 +1,4 @@
+import { API } from '../api';
 import { useState, useEffect } from 'react';
 
 export function useMarketData(ticker, asOf) {
@@ -14,8 +15,8 @@ export function useMarketData(ticker, asOf) {
       setError(null);
       try {
         const [priceRes, evidenceRes] = await Promise.all([
-          fetch(`http://localhost:8000/api/price/${ticker}?as_of=${asOf}&sessions=180`),
-          fetch(`http://localhost:8000/api/evidence/${ticker}?as_of=${asOf}&extras=true`)
+          fetch(`${API}/api/price/${ticker}?as_of=${asOf}&sessions=180`),
+          fetch(`${API}/api/evidence/${ticker}?as_of=${asOf}&extras=true`)
         ]);
 
         if (!priceRes.ok) throw new Error(await priceRes.text());

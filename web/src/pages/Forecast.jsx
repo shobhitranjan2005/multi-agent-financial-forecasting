@@ -1,3 +1,4 @@
+import { API } from '../api';
 import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
 import { Search, TrendingUp, TrendingDown, Minus, Check, Loader2, Info } from 'lucide-react';
@@ -47,7 +48,7 @@ export default function Forecast({ research }) {
     if (!term) { setHits([]); return; }
     const local = STOCKS.filter(([s, n]) => (s + n).toLowerCase().includes(term.toLowerCase())).slice(0, 6).map(([symbol, name]) => ({ symbol, name }));
     const t = setTimeout(async () => {
-      try { const r = await fetch(`http://localhost:8000/api/search?q=${encodeURIComponent(term)}`); const j = await r.json(); setHits(j.results?.length ? j.results : local); } catch { setHits(local); }
+      try { const r = await fetch(`${API}/api/search?q=${encodeURIComponent(term)}`); const j = await r.json(); setHits(j.results?.length ? j.results : local); } catch { setHits(local); }
     }, 250);
     return () => clearTimeout(t);
   }, [q]);
@@ -76,7 +77,7 @@ export default function Forecast({ research }) {
 
   const loadDemo = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/demo');
+      const res = await fetch('${API}/api/demo');
       if (!res.ok) throw new Error('Demo not available');
       const data = await res.json();
       setTicker(data.context?.ticker || 'RELIANCE.NS');

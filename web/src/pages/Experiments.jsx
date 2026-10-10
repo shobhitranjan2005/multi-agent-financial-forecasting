@@ -1,3 +1,4 @@
+import { API } from '../api';
 import React, { useState, useEffect } from 'react';
 import { FileText, Loader2, BarChart2 } from 'lucide-react';
 
@@ -7,7 +8,7 @@ export default function Experiments() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/results')
+    fetch(`${API}/api/results`)
       .then(r => r.json())
       .then(async data => {
         const jsonFiles = data.results.filter(f => f.kind === 'json' && (f.name.startsWith('ablation_') || f.name.startsWith('multiagent') || f.name.startsWith('naive')));
@@ -15,7 +16,7 @@ export default function Experiments() {
         // Fetch content for each json file
         const enriched = await Promise.all(
           jsonFiles.map(async (file) => {
-            const res = await fetch(`http://localhost:8000/api/results/${file.name}`);
+            const res = await fetch(`${API}/api/results/${file.name}`);
             const contentData = await res.json();
             return { ...file, data: contentData.content };
           })

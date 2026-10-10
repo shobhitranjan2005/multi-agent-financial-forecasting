@@ -45,3 +45,6 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+
+# one-off patch files must never be committed
+*.patch
