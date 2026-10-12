@@ -31,7 +31,7 @@ from pydantic import BaseModel, Field
 
 from backend import llm
 from backend.config import Config
-from backend.tools import calendar_nse, market_data
+from backend.tools import calendar_nse, market_data, macro
 
 PROBE_PATH = Config.DATA_DIR / "recall_probe.json"
 
@@ -50,6 +50,15 @@ class NiftyRecall(BaseModel):
     source_of_knowledge: str = Field(description="Briefly: recall, inference, or guess")
 
 
+class EventRecall(BaseModel):
+    """Second contamination signal: dated macroeconomic event verifiable from cached data."""
+
+    knows_answer: bool = Field(description="True only if you actually recall this specific event fact")
+    repo_rate: Optional[float] = Field(description="RBI policy repo rate in percentage (e.g. 6.50, 6.25, 6.00), or null if unknown")
+    stated_confidence: float = Field(description="0-1")
+    source_of_knowledge: str = Field(description="Briefly: recall, inference, or guess")
+
+
 @dataclass
 class ProbeResult:
     probe_date: str
@@ -59,6 +68,11 @@ class ProbeResult:
     error_pct: Optional[float]
     recalled: bool
     note: str
+    actual_event_repo_rate: Optional[float] = None
+    claimed_event_repo_rate: Optional[float] = None
+    event_claims_knowledge: bool = False
+    event_recalled: bool = False
+    event_note: str = ""
 
 
 PROMPT = """What was the closing level of the NIFTY 50 index on {d}?
@@ -66,6 +80,14 @@ PROMPT = """What was the closing level of the NIFTY 50 index on {d}?
 Answer only if you genuinely recall this specific figure. Do not estimate from a
 trend, do not interpolate, and do not infer it from nearby dates — if you do not
 know it, set knows_answer to false and nifty_close to null. An honest "I do not
+know" is the correct and useful answer here; a plausible-looking guess is worse
+than useless because it corrupts a measurement."""
+
+
+EVENT_PROMPT = """What was the Reserve Bank of India (RBI) benchmark policy repo rate (in percentage) in effect on {d}?
+
+Answer only if you genuinely recall this specific fact. Do not infer or guess — if you do not
+know it, set knows_answer to false and repo_rate to null. An honest "I do not
 know" is the correct and useful answer here; a plausible-looking guess is worse
 than useless because it corrupts a measurement."""
 
@@ -85,8 +107,19 @@ def _actual_nifty_close(d: date) -> Optional[float]:
         return None
 
 
+def _actual_rbi_repo_rate(d: date) -> Optional[float]:
+    """Ground truth from cached RBI monetary policy schedule, verified through 2025-08-31."""
+    try:
+        info = macro.repo_rate_at(d)
+        if not info.get("verified", False):
+            return None  # Ground truth verified only through 2025-08-31
+        return info.get("repo_rate_pct")
+    except Exception:
+        return None
+
+
 def probe_date(d: date, *, nonce: str = "") -> ProbeResult:
-    """Probe one date. Uses temperature 0 — we are testing memory, not creativity."""
+    """Probe one date with two signals (index price recall + dated event recall). Uses temperature 0."""
     actual = _actual_nifty_close(d)
     res = llm.generate(
         PROMPT.format(d=d.isoformat()),
@@ -100,22 +133,55 @@ def probe_date(d: date, *, nonce: str = "") -> ProbeResult:
     parsed: Optional[NiftyRecall] = res.parsed  # type: ignore[assignment]
 
     if parsed is None:
-        return ProbeResult(d.isoformat(), actual, None, False, None, False,
-                           f"probe parse failure: {res.parse_error}")
-    if actual is None:
-        return ProbeResult(d.isoformat(), None, parsed.nifty_close, parsed.knows_answer,
-                           None, False, "no ground truth available for this date")
-    if not parsed.knows_answer or parsed.nifty_close is None:
-        return ProbeResult(d.isoformat(), actual, None, False, None, False,
-                           "model declined — weak evidence the date is post-cutoff")
+        p_res = ProbeResult(d.isoformat(), actual, None, False, None, False,
+                            f"probe parse failure: {res.parse_error}")
+    elif actual is None:
+        p_res = ProbeResult(d.isoformat(), None, parsed.nifty_close, parsed.knows_answer,
+                            None, False, "no ground truth available for this date")
+    elif not parsed.knows_answer or parsed.nifty_close is None:
+        p_res = ProbeResult(d.isoformat(), actual, None, False, None, False,
+                            "model declined — weak evidence the date is post-cutoff")
+    else:
+        err = abs(parsed.nifty_close - actual) / actual * 100
+        recalled = err <= RECALL_TOLERANCE_PCT
+        p_res = ProbeResult(
+            d.isoformat(), actual, parsed.nifty_close, True, round(err, 3), recalled,
+            "RECALLED — this date is inside the training window"
+            if recalled else f"claimed but wrong by {err:.2f}% — not genuine recall",
+        )
 
-    err = abs(parsed.nifty_close - actual) / actual * 100
-    recalled = err <= RECALL_TOLERANCE_PCT
-    return ProbeResult(
-        d.isoformat(), actual, parsed.nifty_close, True, round(err, 3), recalled,
-        "RECALLED — this date is inside the training window"
-        if recalled else f"claimed but wrong by {err:.2f}% — not genuine recall",
+    # Signal 2: Dated event verifiable from cached macro data (RBI policy repo rate in effect)
+    actual_repo = _actual_rbi_repo_rate(d)
+    res_ev = llm.generate(
+        EVENT_PROMPT.format(d=d.isoformat()),
+        schema=EventRecall,
+        temperature=0.0,
+        nonce=nonce,
+        system=("You are being tested for factual recall of Indian macroeconomic events. "
+                "Accuracy about what you do and do not know matters more than "
+                "appearing knowledgeable."),
     )
+    parsed_ev: Optional[EventRecall] = res_ev.parsed  # type: ignore[assignment]
+    if parsed_ev is None:
+        p_res.actual_event_repo_rate = actual_repo
+        p_res.event_note = f"event probe parse failure: {res_ev.parse_error}"
+    elif actual_repo is None:
+        p_res.event_note = f"date is past verified RBI decision calendar (through {macro.RBI_VERIFIED_THROUGH}) — unverified"
+    elif not parsed_ev.knows_answer or parsed_ev.repo_rate is None:
+        p_res.actual_event_repo_rate = actual_repo
+        p_res.event_note = "model declined repo rate — weak evidence the date is post-cutoff"
+    else:
+        p_res.actual_event_repo_rate = actual_repo
+        p_res.claimed_event_repo_rate = parsed_ev.repo_rate
+        p_res.event_claims_knowledge = True
+        p_res.event_recalled = abs(parsed_ev.repo_rate - actual_repo) <= 0.05
+        p_res.event_note = (
+            "EVENT RECALLED — RBI repo rate known"
+            if p_res.event_recalled
+            else f"claimed {parsed_ev.repo_rate}% vs actual {actual_repo}% — not genuine recall"
+        )
+
+    return p_res
 
 
 def sweep(
@@ -137,6 +203,13 @@ def sweep(
     latest_recalled = max((r.probe_date for r in recalled), default=None)
     errors = [r.error_pct for r in results if r.error_pct is not None]
 
+    event_recalled = [r for r in results if r.event_recalled]
+    latest_event_recalled = max((r.probe_date for r in event_recalled), default=None)
+
+    # Any signal recall
+    any_recalled_dates = sorted(set([r.probe_date for r in recalled] + [r.probe_date for r in event_recalled]))
+    latest_any_recalled = max(any_recalled_dates, default=None)
+
     return {
         "run_at": datetime.now().isoformat(timespec="seconds"),
         "model": Config.GEMINI_MODEL,
@@ -146,14 +219,26 @@ def sweep(
         "n_recalled": len(recalled),
         "latest_recalled_date": latest_recalled,
         "median_error_pct": round(statistics.median(errors), 3) if errors else None,
+        "n_event_recalled": len(event_recalled),
+        "latest_event_recalled_date": latest_event_recalled,
+        "latest_any_recalled_date": latest_any_recalled,
+        "primary_criterion": (
+            "Documented model training cutoff (January 2025 for gemini-3.1-flash-lite) is "
+            "the primary criterion: all test set as_of dates must begin >= cutoff + 2 months "
+            "(i.e. >= 2025-04-01). Exact price and dated event recall probes serve as secondary "
+            "empirical checks."
+        ),
         "recommended_testset_start": (
-            (datetime.fromisoformat(latest_recalled).date() + timedelta(days=30)).isoformat()
-            if latest_recalled else start.isoformat()
+            max(
+                "2025-04-01",
+                (datetime.fromisoformat(latest_any_recalled).date() + timedelta(days=30)).isoformat()
+                if latest_any_recalled else "2025-04-01"
+            )
         ),
         "interpretation": (
-            "Test-set as_of dates must start after latest_recalled_date. A refusal is "
-            "weaker evidence than a wrong answer — the model may decline on facts it "
-            "holds. Report both counts rather than only the boundary."
+            "Test-set as_of dates must sit post-cutoff. Documented cutoff is primary; "
+            "empirical probes report both exact index close and dated RBI repo rate events. "
+            "A refusal is weaker evidence than a wrong answer."
         ),
         "probes": [r.__dict__ for r in results],
     }

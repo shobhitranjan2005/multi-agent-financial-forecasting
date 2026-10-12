@@ -62,14 +62,17 @@ def cmd_recall_probe(args) -> int:
         return 3
     res = recall_probe.sweep(_d(args.start), _d(args.end), step_days=args.step)
     path = recall_probe.save(res)
-    print(f"\n  Probed {res['n_probes']} dates; {res['n_recalled']} recalled.")
-    print(f"  Latest recalled date:        {res['latest_recalled_date']}")
+    print(f"\n  Probed {res['n_probes']} dates; {res['n_recalled']} index closes recalled; {res.get('n_event_recalled', 0)} macro events recalled.")
+    print(f"  Latest index recalled:       {res['latest_recalled_date']}")
+    print(f"  Latest event recalled:       {res.get('latest_event_recalled_date')}")
     print(f"  Recommended test-set start:  {res['recommended_testset_start']}")
     print(f"  Written to {path}\n")
     for p in res["probes"]:
-        mark = "RECALL" if p["recalled"] else "  --  "
-        print(f"    {mark}  {p['probe_date']}  actual={p['actual_close']} "
-              f"claimed={p['claimed_close']}  {p['note']}")
+        mark = "PRICE_RECALL" if p["recalled"] else "  --  "
+        ev_mark = "EVENT_RECALL" if p.get("event_recalled") else "  --  "
+        print(f"    {mark:<12} {p['probe_date']}  actual={p['actual_close']} claimed={p['claimed_close']}  {p['note']}")
+        if p.get("actual_event_repo_rate") is not None or p.get("claimed_event_repo_rate") is not None:
+            print(f"      {ev_mark:<12} repo_rate: actual={p.get('actual_event_repo_rate')}% claimed={p.get('claimed_event_repo_rate')}%  {p.get('event_note')}")
     print()
     return 0
 
