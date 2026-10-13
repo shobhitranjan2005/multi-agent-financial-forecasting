@@ -43,8 +43,9 @@ def audit_case(ticker: str, as_of: date) -> dict:
 def verdict(probe: dict | None, audit: list[dict], case_dates: list[str], llm_results_exist: bool) -> list[str]:
     out: list[str] = []
     ok = [a for a in audit if "error" not in a]
-    if probe and probe.get("latest_recalled_date"):
-        cut = probe["latest_recalled_date"]
+    latest_cut = probe.get("latest_any_recalled_date") or probe.get("latest_recalled_date") if probe else None
+    if latest_cut:
+        cut = latest_cut
         bad = sum(d <= cut for d in case_dates)
         if bad:
             out.append(f"CONTAMINATED: {bad}/{len(case_dates)} test cases have as_of <= {cut}, "

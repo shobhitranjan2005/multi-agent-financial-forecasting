@@ -170,7 +170,8 @@ def cmd_preflight(args) -> int:
         print("\n  GEMINI_API_KEY not set in .env\n", file=sys.stderr)
         return 3
     try:
-        rep = preflight.run(_d(args.start), _d(args.end), step=args.step)
+        p_path = Path(args.path) if getattr(args, "path", None) else None
+        rep = preflight.run(_d(args.start), _d(args.end), step=args.step, path=p_path)
     except preflight.provenance.UnpinnedModelError as exc:
         print(f"\n  {exc}\n", file=sys.stderr)
         return 4
@@ -227,6 +228,7 @@ def main(argv: list[str] | None = None) -> int:
     pf.add_argument("--start", default="2024-01-01")
     pf.add_argument("--end", default="2026-09-01")
     pf.add_argument("--step", type=int, default=30)
+    pf.add_argument("--path", default="", help="custom path to candidate testset json")
     pf.set_defaults(func=cmd_preflight)
 
     args = ap.parse_args(argv)

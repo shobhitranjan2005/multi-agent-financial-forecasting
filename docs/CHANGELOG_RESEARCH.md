@@ -22,7 +22,7 @@ This document tracks changes that could affect the validity or comparability of 
 - **Dual Contamination Probes**:
   - Primary criterion: documented model cutoff (January 2025).
   - Secondary empirical signal 1: exact NIFTY 50 index close tolerance ($\le 0.5\%$).
-  - Secondary empirical signal 2: dated RBI monetary policy repo rate decisions. Note: verified against official RBI decisions through `2025-08-31` (`macro.RBI_VERIFIED_THROUGH`); dates beyond this are left unverified against official sources and rely on the documented cutoff.
+  - Secondary empirical signal 2: dated RBI monetary policy repo rate decisions. Note: verified against official RBI decisions through `2025-08-31` (`macro.RBI_VERIFIED_THROUGH`), which covers 5 of the 17 test dates; dates beyond `2025-08-31` (12 dates) are unverified against official sources, and the documented knowledge cutoff remains the primary criterion.
 - **Seed Universe**: Liquid NSE large-caps point-in-time verified against daily bhavcopy (`TATAMOTORS.NS` excluded due to historical Yahoo Finance data gap).
 
 

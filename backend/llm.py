@@ -60,6 +60,7 @@ class Usage:
     completion_tokens: int = 0
     seconds: float = 0.0
     parse_failures: int = 0
+    cached: bool = False
 
     @property
     def total_tokens(self) -> int:
@@ -72,11 +73,13 @@ class Usage:
         self.completion_tokens += other.completion_tokens
         self.seconds += other.seconds
         self.parse_failures += other.parse_failures
+        self.cached = (self.cached_calls == self.calls) if self.calls > 0 else False
 
     def as_dict(self) -> dict:
         return {
             "calls": self.calls,
             "cached_calls": self.cached_calls,
+            "cached": self.cached,
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "total_tokens": self.total_tokens,
@@ -93,6 +96,7 @@ class LLMResult:
     parsed: Optional[BaseModel] = None
     parse_error: Optional[str] = None
     from_cache: bool = False
+    cached: bool = False
 
 
 # Module-level tally so a whole pipeline run can be costed without threading a
@@ -256,8 +260,15 @@ def generate(
 
     def loader() -> dict:
         was_cached["hit"] = False
+        t0 = time.time()
         text, pt, ct = _call_gemini(prompt, model, system, temperature, schema)
-        return {"text": text, "prompt_tokens": pt, "completion_tokens": ct}
+        latency = time.time() - t0
+        return {
+            "text": text,
+            "prompt_tokens": pt,
+            "completion_tokens": ct,
+            "latency_s": round(latency, 3),
+        }
 
     if use_cache:
         payload = get_cache().llm(cache_key_prompt, model, loader, nonce=nonce)
@@ -268,14 +279,15 @@ def generate(
     elapsed = time.time() - started
     from_cache = was_cached["hit"]
 
+    # Cache hits report the original token counts and latency from the payload,
+    # with the cached flag set to True.
     usage = Usage(
         calls=1,
         cached_calls=1 if from_cache else 0,
-        # A cache hit costs no tokens. Counting them would overstate the cost of
-        # any re-run and make the debate look more expensive than it is.
-        prompt_tokens=0 if from_cache else payload.get("prompt_tokens", 0),
-        completion_tokens=0 if from_cache else payload.get("completion_tokens", 0),
-        seconds=elapsed,
+        prompt_tokens=payload.get("prompt_tokens", 0),
+        completion_tokens=payload.get("completion_tokens", 0),
+        seconds=payload.get("latency_s", elapsed) if from_cache else elapsed,
+        cached=from_cache,
     )
 
     result = LLMResult(
@@ -283,6 +295,7 @@ def generate(
         model=model,
         usage=usage,
         from_cache=from_cache,
+        cached=from_cache,
     )
 
     if schema is not None:
