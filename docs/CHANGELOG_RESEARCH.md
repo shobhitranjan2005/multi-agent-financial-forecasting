@@ -24,5 +24,21 @@ This document tracks changes that could affect the validity or comparability of 
   - Secondary empirical signal 1: exact NIFTY 50 index close tolerance ($\le 0.5\%$).
   - Secondary empirical signal 2: dated RBI monetary policy repo rate decisions. Note: verified against official RBI decisions through `2025-08-31` (`macro.RBI_VERIFIED_THROUGH`), which covers 5 of the 17 test dates; dates beyond `2025-08-31` (12 dates) are unverified against official sources, and the documented knowledge cutoff remains the primary criterion.
 - **Seed Universe**: Liquid NSE large-caps point-in-time verified against daily bhavcopy (`TATAMOTORS.NS` excluded due to historical Yahoo Finance data gap).
+- **Candidate Test Set Draft Build**:
+  - **Draft Path**: `data/testset_draft_v3.json` (`status: "UNFROZEN_DRAFT"`). Stale `FROZEN` line removed; pending user review prior to freezing.
+  - **Exact Build Command**:
+    ```bash
+    python -m evaluate build-testset --start 2025-04-01 --end 2026-09-09 --dates 17 --tickers 8 --seed 20260806 --out data/testset_draft_v3.json --overwrite
+    ```
+  - **Inclusion Rules**:
+    1. Date window: `2025-04-01` to `2026-09-09` (strictly $\ge$ model cutoff + 2 months, up to today − 21 trading sessions).
+    2. Spacing: strictly $\ge 21$ NSE trading sessions apart (completely non-overlapping evaluation windows).
+    3. Point-in-time universe: checked against official NSE Cash Market Bhavcopy for each session.
+    4. Sufficient history: $\ge 200$ trading sessions prior price history verified for every candidate ticker (about 10 months, needed for SMA-200, RSI, MACD) without NaN.
+  - **Exclusion Rules**:
+    1. `TATAMOTORS.NS` excluded due to corporate demerger causing missing Yahoo Finance historical records.
+    2. Any constituent not actively traded on NSE on that specific session is excluded.
+    3. Strictly zero conditioning on forecasts, predictions, volatility, or realized returns.
+
 
 

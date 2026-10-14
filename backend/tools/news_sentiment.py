@@ -23,6 +23,7 @@ Two deliberately separate paths:
 from __future__ import annotations
 
 import re
+import threading
 import time
 import warnings
 from datetime import date, datetime, time as dtime, timedelta
@@ -51,8 +52,9 @@ _RATE_LIMIT_MARKERS = (
     "rate limit",
 )
 
-_MIN_REQUEST_SPACING = 5.5  # seconds; GDELT asks for one every 5
-_last_request_at = 0.0
+_gdelt_lock = threading.Lock()
+_next_gdelt_slot = 0.0
+_MIN_REQUEST_SPACING = 6.0  # seconds; strict global spacing
 
 # Indian financial RSS — live demo path only, never the backtest.
 INDIAN_RSS_FEEDS = {
@@ -64,7 +66,11 @@ INDIAN_RSS_FEEDS = {
 
 
 class GDELTRateLimit(RuntimeError):
-    """GDELT throttled us. Retryable — and NOT to be cached."""
+    """GDELT throttled us (429 or text throttle). Retryable — and NOT to be cached."""
+
+
+class GDELTConnectionError(RuntimeError):
+    """Connection reset / TLS failure from GDELT. Retryable — and NOT to be cached."""
 
 
 def _as_date(d: str | date | datetime) -> date:
@@ -76,30 +82,48 @@ def _as_date(d: str | date | datetime) -> date:
 
 
 def _throttle() -> None:
-    global _last_request_at
-    wait = _MIN_REQUEST_SPACING - (time.time() - _last_request_at)
+    global _next_gdelt_slot
+    with _gdelt_lock:
+        now = time.monotonic()
+        wait = max(0.0, _next_gdelt_slot - now)
+        _next_gdelt_slot = max(now, _next_gdelt_slot) + _MIN_REQUEST_SPACING
     if wait > 0:
         time.sleep(wait)
-    _last_request_at = time.time()
+
+
+def _penalise(delay: float = 12.0) -> None:
+    global _next_gdelt_slot
+    with _gdelt_lock:
+        _next_gdelt_slot = max(_next_gdelt_slot, time.monotonic() + delay)
 
 
 @retry(
-    retry=retry_if_exception_type(GDELTRateLimit),
+    retry=retry_if_exception_type((GDELTRateLimit, GDELTConnectionError, httpx.ConnectError, httpx.HTTPStatusError)),
     wait=wait_exponential(multiplier=2, min=6, max=60),
-    stop=stop_after_attempt(4),
+    stop=stop_after_attempt(5),
     reraise=True,
 )
 def _gdelt_request(params: dict) -> dict:
-    """One GDELT call, with the 200-that-means-429 handled."""
+    """One GDELT call, with 429, plain-text throttle, and connection resets handled."""
     _throttle()
-    with httpx.Client(timeout=45.0, headers={"User-Agent": Config.BROWSER_UA}) as client:
-        resp = client.get(GDELT_URL, params=params)
+    try:
+        with httpx.Client(timeout=45.0, headers={"User-Agent": Config.BROWSER_UA}) as client:
+            resp = client.get(GDELT_URL, params=params)
+    except (httpx.ConnectError, ConnectionResetError) as exc:
+        _penalise(10.0)
+        raise GDELTConnectionError(f"Connection reset by GDELT host ({exc})") from exc
+
+    if resp.status_code == 429:
+        _penalise(12.0)
+        raise GDELTRateLimit(f"HTTP 429: {resp.text[:200]}")
 
     body = resp.text or ""
     lowered = body.strip().lower()
     # Check BEFORE parsing: this arrives as 200 with a plain-text body.
     if any(m in lowered for m in _RATE_LIMIT_MARKERS):
+        _penalise(12.0)
         raise GDELTRateLimit(body.strip()[:200])
+
     resp.raise_for_status()
 
     if not lowered:
@@ -251,6 +275,7 @@ def get_news(
             "raw_count": len(raw),
             "after_cutoff_filter": len(articles),
             "after_dedup": len(deduped),
+            "status": "ok" if deduped else "empty",
             "limitations": [
                 "GDELT provides headline metadata and tone, not full article text.",
                 "Coverage of smaller Indian outlets is uneven.",

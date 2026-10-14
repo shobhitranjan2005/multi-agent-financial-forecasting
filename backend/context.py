@@ -47,6 +47,7 @@ class MarketContext:
     fundamentals: Optional[dict] = None
     news: Optional[dict] = None
     macro: Optional[dict] = None
+    news_status: str = "empty"  # "ok" | "empty" | "error"
     notes: list[str] = field(default_factory=list)
 
     # ---- prompt rendering ----
@@ -213,11 +214,13 @@ def build(
     with_fundamentals: bool = False,
     with_news: bool = False,
     with_macro: bool = False,
+    strict: bool = False,
 ) -> MarketContext:
     """Assemble the evidence pack for one (ticker, as_of).
 
     The Phase 2 tools are opt-in so the Phase 1 skeleton stays fast and so the
     leave-one-out ablation in Phase 4 can drop a specialist's evidence cleanly.
+    In `strict` mode, any failure fetching requested evidence aborts immediately.
     """
     as_of_d = _as_date(as_of)
     # Resolve against the universe as it stood at as_of, not today's — otherwise a
@@ -241,6 +244,8 @@ def build(
     last_close = float(prices["close"].iloc[-1]) if not prices.empty else None
     if prices.empty:
         notes.append("no price rows returned for this ticker at this as_of")
+        if strict:
+            raise RuntimeError(f"Strict evidence error (price): empty price history for {ticker} at {as_of_d}")
 
     ind = indicators.compute_all(prices) if not prices.empty else {}
     for name, val in ind.items():
@@ -272,17 +277,28 @@ def build(
             ctx.fundamentals = _f.get_fundamentals(ticker, as_of_d)
         except Exception as exc:
             ctx.notes.append(f"fundamentals unavailable: {exc}")
+            if strict:
+                raise RuntimeError(f"Strict evidence error (fundamentals): {ticker} at {as_of_d}: {exc}") from exc
+
     if with_news:
         from backend.tools import news_sentiment as _n
         try:
             ctx.news = _n.get_news(ticker, as_of_d)
+            heads = (ctx.news or {}).get("headlines") or []
+            ctx.news_status = "ok" if len(heads) > 0 else "empty"
         except Exception as exc:
+            ctx.news_status = "error"
             ctx.notes.append(f"news unavailable: {exc}")
+            if strict:
+                raise RuntimeError(f"Strict evidence error (news): {ticker} at {as_of_d}: {exc}") from exc
+
     if with_macro:
         from backend.tools import macro as _m
         try:
             ctx.macro = _m.get_macro_data(as_of_d, ticker=ticker)
         except Exception as exc:
             ctx.notes.append(f"macro unavailable: {exc}")
+            if strict:
+                raise RuntimeError(f"Strict evidence error (macro): {ticker} at {as_of_d}: {exc}") from exc
 
     return ctx

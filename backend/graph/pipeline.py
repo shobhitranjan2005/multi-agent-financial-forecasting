@@ -237,6 +237,7 @@ def run(
     ctx: Optional[MarketContext] = None,
     checkpoint: bool = False,
     return_state: bool = False,
+    strict: bool = False,
 ) -> ForecastRecord | tuple[ForecastRecord, dict]:
     """Run the multi-agent pipeline over one (ticker, as_of).
 
@@ -262,6 +263,7 @@ def run(
             with_fundamentals="fundamental" not in dropped,
             with_news="sentiment" not in dropped,
             with_macro="macro" not in dropped,
+            strict=strict,
         )
 
     run_key = f"{ctx.ticker}:{ctx.as_of}:{nonce or 'base'}:{uuid.uuid4().hex[:8]}"
@@ -522,5 +524,11 @@ def _has_values(d) -> bool:
 
 def _evidence_flags(ctx) -> dict:
     """ctx.news / ctx.fundamentals are DICTS (getattr on a dict is always None)."""
-    return {"has_news": bool((ctx.news or {}).get("headlines")),
-            "has_fundamentals": _has_values(ctx.fundamentals)}
+    status = getattr(ctx, "news_status", None)
+    if status is None:
+        status = "ok" if bool((ctx.news or {}).get("headlines")) else "empty"
+    return {
+        "has_news": bool((ctx.news or {}).get("headlines")),
+        "news_status": status,
+        "has_fundamentals": _has_values(ctx.fundamentals),
+    }

@@ -37,7 +37,8 @@ def cmd_build_testset(args) -> int:
         verify_traded=not args.no_verify,
     )
     try:
-        path = testset_mod.save(ts, overwrite=args.overwrite)
+        dest = Path(args.out) if getattr(args, "out", None) else testset_mod.TESTSET_PATH
+        path = testset_mod.save(ts, path=dest, overwrite=args.overwrite)
     except FileExistsError as exc:
         print(f"\n  {exc}\n", file=sys.stderr)
         return 1
@@ -193,6 +194,7 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--tickers", type=int, default=12)
     b.add_argument("--horizon", type=int, default=21)
     b.add_argument("--seed", type=int, default=20260806)
+    b.add_argument("--out", default="", help="custom path to candidate testset json")
     b.add_argument("--overwrite", action="store_true", help="DANGER: invalidates existing results")
     b.add_argument("--no-verify", action="store_true", help="skip bhavcopy membership check")
     b.set_defaults(func=cmd_build_testset)

@@ -98,9 +98,15 @@ def run(
     nonce: str = "",
     testset_path: Path = testset_mod.TESTSET_PATH,
     progress: bool = True,
+    strict: bool = True,
     **forecaster_kwargs,
 ) -> dict:
-    """Run `system` over the frozen test set and return scored results."""
+    """Run `system` over the frozen test set and return scored results.
+    
+    In `strict` mode (default True for experiments), if any evidence source or
+    forecaster errors on a case, the run aborts immediately so that every system
+    evaluates on identical, uncompromised evidence.
+    """
     if system not in naive.REGISTRY:
         provenance.require_pinned_model()
     cases = testset_mod.cases(testset_path)
@@ -118,14 +124,28 @@ def run(
             print(f"  [{i:>3}/{len(cases)}] {case.ticker:<14} {case.as_of} ... ",
                   end="", flush=True)
         try:
-            rec = fn(
-                case.ticker, case.as_of,
-                horizon_sessions=case.horizon_sessions,
-                nonce=nonce,
-                **forecaster_kwargs,
-            )
+            try:
+                rec = fn(
+                    case.ticker, case.as_of,
+                    horizon_sessions=case.horizon_sessions,
+                    nonce=nonce,
+                    strict=strict,
+                    **forecaster_kwargs,
+                )
+            except TypeError:
+                rec = fn(
+                    case.ticker, case.as_of,
+                    horizon_sessions=case.horizon_sessions,
+                    nonce=nonce,
+                    **forecaster_kwargs,
+                )
         except Exception as exc:
-            # One bad case must not kill a 90-minute sweep.
+            if strict:
+                raise RuntimeError(
+                    f"ABORTED RUN (strict mode): evidence or forecaster error on case "
+                    f"[{i}/{len(cases)}] {case.ticker} {case.as_of}: {exc}"
+                ) from exc
+            # One bad case must not kill an un-strict sweep.
             failures.append({"ticker": case.ticker, "as_of": case.as_of,
                              "error": f"{type(exc).__name__}: {exc}"})
             if progress:

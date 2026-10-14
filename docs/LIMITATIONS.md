@@ -5,11 +5,11 @@ This document outlines three critical limitations of the current codebase that c
 ## 1. Reliance on Brittle, Public Data Sources
 The system relies entirely on free, public APIs (e.g., `yfinance` for OHLCV and fundamentals, GDELT for news). These sources are heavily rate-limited and often suffer from missing or messy data (e.g., missing index components like `^CNXAUTO` or spotty mid-cap coverage).
 
-### News Sparsity and Vacuous Sentiment Ablation
-- In preflight data auditing across all 136 candidate test cases (2025-04-01 to 2026-08-12), archival GDELT news headlines were empty (0 news items) for 100% of cases.
-- Consequently, the Sentiment Specialist receives an empty headline corpus and defaults to neutral/uninformative sentiment signals across the test set.
-- **Experimental Implication**: The leave-one-out ablation `multiagent-no-sentiment` is expected to be uninformative / vacuous by construction: dropping a specialist that received zero external evidence cannot meaningfully alter the pipeline's forecasts.
-- **Future Work**: Integrate paid or archival Indian financial news feeds (e.g., Bloomberg, Refinitiv, Cogencis, or local newspaper archives with point-in-time publication timestamps).
+### News Evidence Status and Diagnostic Investigation
+- In initial preflight audits of candidate test cases, news evidence returned 0 items across cases.
+- Direct diagnostics of the GDELT DOC API endpoint are underway to isolate the cause (investigating HTTP 429 throttling, edge connection resets, retry handling, and archival availability).
+- Experimental implications for the sentiment specialist ablation will be finalized following completion of diagnostic prefetching and cache verification.
+- **Future Work**: Evaluate paid or verified point-in-time Indian financial news feeds (e.g., Bloomberg, Refinitiv, Cogencis, or local newspaper archives with point-in-time publication timestamps).
 
 ## 2. Naive Trading Strategy and Benchmarking
 The evaluation harness strictly measures 21-session "directional accuracy" and evaluates a simple long/short assumption against the benchmark (NIFTY 50). It completely ignores real-world trading frictions such as slippage, liquidity, taxes, and short-selling constraints.

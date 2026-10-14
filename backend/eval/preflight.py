@@ -34,10 +34,17 @@ def audit_case(ticker: str, as_of: date) -> dict:
     try:
         c = build(ticker, as_of, with_fundamentals=True, with_news=True, with_macro=True)
     except Exception as exc:  # recorded, never hidden
-        return {"ticker": ticker, "as_of": str(as_of), "error": str(exc)}
+        return {"ticker": ticker, "as_of": str(as_of), "error": str(exc), "news_status": "error"}
     heads = (c.news or {}).get("headlines") or []
-    return {"ticker": ticker, "as_of": str(as_of), "news_items": len(heads),
-            "fundamental_values": non_null(c.fundamentals), "macro_values": non_null(c.macro)}
+    status = getattr(c, "news_status", "ok" if heads else "empty")
+    return {
+        "ticker": ticker,
+        "as_of": str(as_of),
+        "news_items": len(heads),
+        "news_status": status,
+        "fundamental_values": non_null(c.fundamentals),
+        "macro_values": non_null(c.macro),
+    }
 
 
 def verdict(probe: dict | None, audit: list[dict], case_dates: list[str], llm_results_exist: bool) -> list[str]:
@@ -58,6 +65,10 @@ def verdict(probe: dict | None, audit: list[dict], case_dates: list[str], llm_re
         out.append("No recall detected in the probed window (a refusal is weaker evidence than a wrong answer; "
                    "report probe counts, not just the boundary).")
     if ok:
+        news_errs = sum(a.get("news_status") == "error" for a in ok)
+        if news_errs:
+            out.append(f"DATA FETCH FAILURE: News retrieval errored for {news_errs}/{len(ok)} cases "
+                       f"({news_errs/len(ok):.0%}) rather than completing cleanly. Check rate limits / connection.")
         for key, label in (("news_items", "Sentiment (news)"), ("fundamental_values", "Fundamental")):
             empty = sum(a[key] == 0 for a in ok) / len(ok)
             if empty >= 0.5:
@@ -84,7 +95,7 @@ def run(start: date, end: date, step: int = 30, path: Path | None = None) -> dic
             print(f"  [{i}/{len(cases)}] {c.ticker} {c.as_of} ...", flush=True)
             a = audit_case(c.ticker, date.fromisoformat(str(c.as_of)))
             print("      FAILED: " + a["error"][:90] if "error" in a else
-                  f"      news={a['news_items']}  fundamentals={a['fundamental_values']}  macro={a['macro_values']}",
+                  f"      news={a['news_items']} (status={a.get('news_status')})  fundamentals={a['fundamental_values']}  macro={a['macro_values']}",
                   flush=True)
             audit.append(a)
     except KeyboardInterrupt:

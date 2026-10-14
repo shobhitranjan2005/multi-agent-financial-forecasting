@@ -50,6 +50,7 @@ def forecast(
     ctx: MarketContext | None = None,
     temperature: float = 0.0,
     with_extras: bool = True,
+    strict: bool = False,
 ) -> ForecastRecord:
     """Run the baseline forecaster over one (ticker, as_of).
 
@@ -68,6 +69,7 @@ def forecast(
             with_fundamentals=with_extras,
             with_news=with_extras,
             with_macro=with_extras,
+            strict=strict,
         )
 
     prompt = INSTRUCTION.format(
