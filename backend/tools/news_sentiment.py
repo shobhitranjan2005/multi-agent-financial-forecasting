@@ -43,7 +43,14 @@ from backend.cache import get_cache
 from backend.config import Config
 from backend.tools import tickers
 
-GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+GDELT_HTTPS_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+GDELT_HTTP_URL = "http://api.gdeltproject.org/api/v2/doc/doc"
+
+
+def _gdelt_url() -> str:
+    """Return GDELT endpoint URL based on Config.GDELT_ALLOW_HTTP flag or env var."""
+    allow_http = Config.GDELT_ALLOW_HTTP or os.getenv("GDELT_ALLOW_HTTP", "0").lower() in ("1", "true", "yes")
+    return GDELT_HTTP_URL if allow_http else GDELT_HTTPS_URL
 
 # The exact shape of GDELT's rate-limit reply, which arrives as HTTP 200.
 _RATE_LIMIT_MARKERS = (
@@ -54,7 +61,7 @@ _RATE_LIMIT_MARKERS = (
 
 _gdelt_lock = threading.Lock()
 _next_gdelt_slot = 0.0
-_MIN_REQUEST_SPACING = 6.0  # seconds; strict global spacing
+_MIN_REQUEST_SPACING = 10.0  # seconds; strict global spacing (>= 8s, 10s safe margin)
 
 # Indian financial RSS — live demo path only, never the backtest.
 INDIAN_RSS_FEEDS = {
@@ -91,7 +98,7 @@ def _throttle() -> None:
         time.sleep(wait)
 
 
-def _penalise(delay: float = 12.0) -> None:
+def _penalise(delay: float = 35.0) -> None:
     global _next_gdelt_slot
     with _gdelt_lock:
         _next_gdelt_slot = max(_next_gdelt_slot, time.monotonic() + delay)
@@ -99,7 +106,7 @@ def _penalise(delay: float = 12.0) -> None:
 
 @retry(
     retry=retry_if_exception_type((GDELTRateLimit, GDELTConnectionError, httpx.ConnectError, httpx.HTTPStatusError)),
-    wait=wait_exponential(multiplier=2, min=6, max=60),
+    wait=wait_exponential(multiplier=2, min=10, max=90),
     stop=stop_after_attempt(5),
     reraise=True,
 )
@@ -108,20 +115,20 @@ def _gdelt_request(params: dict) -> dict:
     _throttle()
     try:
         with httpx.Client(timeout=45.0, headers={"User-Agent": Config.BROWSER_UA}) as client:
-            resp = client.get(GDELT_URL, params=params)
+            resp = client.get(_gdelt_url(), params=params)
     except (httpx.ConnectError, ConnectionResetError) as exc:
-        _penalise(10.0)
+        _penalise(15.0)
         raise GDELTConnectionError(f"Connection reset by GDELT host ({exc})") from exc
 
     if resp.status_code == 429:
-        _penalise(12.0)
+        _penalise(25.0)
         raise GDELTRateLimit(f"HTTP 429: {resp.text[:200]}")
 
     body = resp.text or ""
     lowered = body.strip().lower()
     # Check BEFORE parsing: this arrives as 200 with a plain-text body.
     if any(m in lowered for m in _RATE_LIMIT_MARKERS):
-        _penalise(12.0)
+        _penalise(25.0)
         raise GDELTRateLimit(body.strip()[:200])
 
     resp.raise_for_status()
@@ -198,7 +205,7 @@ def _company_query(ticker: str, company_name: Optional[str]) -> str:
         names = [_strip_legal(company_name or base)]
     phrases = [f'"{n}"' if " " in n else n for n in names]
     q = phrases[0] if len(phrases) == 1 else "(" + " OR ".join(phrases) + ")"
-    return f"{q} sourcecountry:india"
+    return f"{q} sourcecountry:IN"
 
 
 def get_news(
@@ -282,7 +289,7 @@ def get_news(
             ],
         }
 
-    return cache.historical("gdelt", ticker, f"news_v2_{lookback_days}d", as_of_d.isoformat(), loader)
+    return cache.historical("gdelt", ticker, f"news_v3_{lookback_days}d", as_of_d.isoformat(), loader)
 
 
 def get_live_rss(limit_per_feed: int = 15) -> dict:

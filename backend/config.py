@@ -22,6 +22,9 @@ class Config:
     # Aliases shift; "gemini-flash-latest" is a moving target.
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 
+    # Network / GDELT protocol (default HTTPS; allows HTTP fallback if port 443 resets)
+    GDELT_ALLOW_HTTP: bool = os.getenv("GDELT_ALLOW_HTTP", "0").lower() in ("1", "true", "yes")
+
     # Storage
     DATA_DIR: Path = PROJECT_ROOT / "data"
     CACHE_DB: Path = DATA_DIR / "cache.db"

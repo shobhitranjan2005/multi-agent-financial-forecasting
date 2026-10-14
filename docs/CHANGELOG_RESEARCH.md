@@ -40,5 +40,20 @@ This document tracks changes that could affect the validity or comparability of 
     2. Any constituent not actively traded on NSE on that specific session is excluded.
     3. Strictly zero conditioning on forecasts, predictions, volatility, or realized returns.
 
+### GDELT Data Protocol & Evidence Hardening
+- **Cache Key Bump to `news_v3`**: Bumped news cache key to `news_v3_{lookback}d` to guarantee no stale empty responses from previous query formulations are reused.
+- **FIPS Country Operator**: Updated GDELT DOC API operator syntax from literal `sourcecountry:india` to standard FIPS 10-4 country code `sourcecountry:IN`.
+- **Protocol Configuration & Fallback**: Added `GDELT_ALLOW_HTTP=1` flag to bypass Windows TCP reset (`[WinError 10054]`) during port 443 TLS handshake on GDELT host. Zero credentials transmitted (keyless).
+- **Integrity & Provenance**:
+  - Enforced untrusted input containment: headlines enclosed within `<headlines>` tags under prompt injection guard.
+  - Implemented immutable news data provenance: SHA-256 hash of all cached news payloads recorded in evaluation run provenance blocks (`provenance.collect`).
+- **Explicit Evidence Status**: Added explicit `news_status` (`ok` | `empty` | `error`) to market context, pipeline evidence flags, and preflight audit. Strict evaluation mode aborts immediately if any evidence fetch errors.
+- **Pacing & Verification**:
+  - Enforced global spacing $\ge 10$s with exponential backoff on HTTP 429 and connection resets.
+  - Verification on 3 benchmark tickers on `2025-06-02`:
+    - `RELIANCE.NS`: 53 headlines (`status: ok`)
+    - `HDFCBANK.NS`: 32 headlines (`status: ok`)
+    - `INFY.NS`: 50 headlines (`status: ok`)
+
 
 

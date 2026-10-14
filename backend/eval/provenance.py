@@ -55,8 +55,47 @@ def _ver(pkg: str) -> str | None:
         return None
 
 
+def _news_provenance(testset_path: Path) -> dict:
+    """Hash all cached news payloads for test cases to establish immutable data provenance."""
+    import sqlite3
+    from backend.eval import testset as ts_mod
+
+    out: dict[str, object] = {
+        "gdelt_allow_http": Config.GDELT_ALLOW_HTTP,
+        "cache_key_prefix": "news_v3_30d",
+        "case_hashes": {},
+        "composite_sha256": None,
+    }
+    if not Config.CACHE_DB.exists():
+        return out
+
+    try:
+        cases = ts_mod.cases(testset_path)
+    except Exception:
+        return out
+
+    conn = sqlite3.connect(Config.CACHE_DB)
+    hasher = hashlib.sha256()
+    case_hashes: dict[str, str | None] = {}
+    for c in sorted(cases, key=lambda x: (str(x.as_of), x.ticker)):
+        cache_key = f"hist::gdelt::{c.ticker}::news_v3_30d::{c.as_of}"
+        row = conn.execute("SELECT value FROM cache WHERE key = ?", (cache_key,)).fetchone()
+        if row:
+            raw_bytes = row[0].encode("utf-8")
+            h = hashlib.sha256(raw_bytes).hexdigest()
+            case_hashes[f"{c.ticker}::{c.as_of}"] = h
+            hasher.update(f"{cache_key}:{h}\n".encode("utf-8"))
+        else:
+            case_hashes[f"{c.ticker}::{c.as_of}"] = None
+            hasher.update(f"{cache_key}:none\n".encode("utf-8"))
+
+    out["case_hashes"] = case_hashes
+    out["composite_sha256"] = hasher.hexdigest()
+    return out
+
+
 def collect(testset_path: Path, system: str) -> dict:
-    return {
+    data = {
         "testset_sha256": _sha256(Path(testset_path)),
         "git_commit": _git("rev-parse", "HEAD"),
         "git_dirty": bool(_git("status", "--porcelain")),
@@ -64,3 +103,6 @@ def collect(testset_path: Path, system: str) -> dict:
         "horizon_sessions": Config.HORIZON_SESSIONS,
         "packages": {p: _ver(p) for p in _PKGS},
     }
+    if not system.startswith("naive"):
+        data["news_provenance"] = _news_provenance(testset_path)
+    return data
