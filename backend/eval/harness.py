@@ -8,6 +8,7 @@ That is what makes the Phase 4 ablations one-liners instead of new code paths.
 from __future__ import annotations
 
 import csv
+import inspect
 import json
 import time
 from datetime import datetime
@@ -113,6 +114,10 @@ def run(
     if limit:
         cases = cases[:limit]
     fn = get_forecaster(system)
+    sig = inspect.signature(fn)
+    supports_strict = "strict" in sig.parameters or any(
+        p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+    )
 
     records: list[ForecastRecord] = []
     scored: list[Scored] = []
@@ -123,22 +128,15 @@ def run(
         if progress:
             print(f"  [{i:>3}/{len(cases)}] {case.ticker:<14} {case.as_of} ... ",
                   end="", flush=True)
+        call_kw = dict(
+            horizon_sessions=case.horizon_sessions,
+            nonce=nonce,
+            **forecaster_kwargs,
+        )
+        if supports_strict:
+            call_kw["strict"] = strict
         try:
-            try:
-                rec = fn(
-                    case.ticker, case.as_of,
-                    horizon_sessions=case.horizon_sessions,
-                    nonce=nonce,
-                    strict=strict,
-                    **forecaster_kwargs,
-                )
-            except TypeError:
-                rec = fn(
-                    case.ticker, case.as_of,
-                    horizon_sessions=case.horizon_sessions,
-                    nonce=nonce,
-                    **forecaster_kwargs,
-                )
+            rec = fn(case.ticker, case.as_of, **call_kw)
         except Exception as exc:
             if strict:
                 raise RuntimeError(

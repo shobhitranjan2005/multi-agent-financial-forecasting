@@ -75,12 +75,13 @@ def momentum_persistence(
     *,
     horizon_sessions: int = Config.HORIZON_SESSIONS,
     ctx: MarketContext | None = None,
+    strict: bool = False,
     **_ignored,
 ) -> ForecastRecord:
     """Extrapolate the trailing `horizon_sessions` return forwards."""
     started = time.time()
     if ctx is None:
-        ctx = build_context(ticker, as_of, horizon_sessions=horizon_sessions)
+        ctx = build_context(ticker, as_of, horizon_sessions=horizon_sessions, strict=strict)
 
     closes = ctx.prices["close"] if not ctx.prices.empty else None
     if closes is None or len(closes) <= horizon_sessions:
@@ -106,12 +107,13 @@ def always_up(
     *,
     horizon_sessions: int = Config.HORIZON_SESSIONS,
     ctx: MarketContext | None = None,
+    strict: bool = False,
     **_ignored,
 ) -> ForecastRecord:
     """Always predicts up — the buy-and-hold proxy."""
     started = time.time()
     if ctx is None:
-        ctx = build_context(ticker, as_of, horizon_sessions=horizon_sessions)
+        ctx = build_context(ticker, as_of, horizon_sessions=horizon_sessions, strict=strict)
     return _record(
         ctx, "naive-alwaysup", "up", 60.0,
         "Unconditional long. Included to expose how flattering raw directional "
