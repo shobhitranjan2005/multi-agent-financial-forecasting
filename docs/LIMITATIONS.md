@@ -7,8 +7,8 @@ The system relies entirely on free, public APIs (e.g., `yfinance` for OHLCV and 
 
 ### News Evidence and Protocol Disclosure
 - **Archival Coverage**: GDELT DOC API provides point-in-time archival Indian financial press headlines (e.g., ~10–25 articles per 30-day lookback for liquid NSE constituents).
-- **Protocol Configuration**: Remote host `api.gdeltproject.org:443` forcibly closes TLS connections on Windows (`[WinError 10054]` / `curl (35)` TLS handshake reset). News retrieval operates via `GDELT_ALLOW_HTTP=1` to connect via HTTP/1.1 port 80.
-- **Operator Syntax & Cache Invalidation**: Query syntax uses FIPS 10-4 country code `sourcecountry:IN` (replacing the literal string `sourcecountry:india`). Cache keys were bumped to `news_v3` to ensure no stale empty responses from previous queries are reused.
+- **Protocol Configuration & Sequence**: Remote host `api.gdeltproject.org:443` forcibly closes TLS connections on Windows (`[WinError 10054]` / `curl (35)` TLS handshake reset). Consequently, news fetched over plain HTTP because HTTPS handshakes were reset on this machine; data is public and keyless; each payload SHA-256 hashed. The fallback is controlled by `GDELT_ALLOW_HTTP=1` (defaulting to HTTPS when unset).
+- **Operator Syntax & Cache Invalidation**: Query syntax uses FIPS 10-4 country code `sourcecountry:IN` and `sourcelang:eng`. Cache keys are bumped (to `news_v5`) to ensure no stale or unfiltered responses are ever reused.
 - **Integrity Safeguards**:
   - *No Credentials*: Communication is keyless with standard browser user-agent headers.
   - *Prompt Injection Guard*: All retrieved headlines are treated as untrusted text, enclosed within `<headlines>` tags, and subjected to prompt-level injection defense rules.

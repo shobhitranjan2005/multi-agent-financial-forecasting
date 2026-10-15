@@ -62,7 +62,7 @@ def _news_provenance(testset_path: Path) -> dict:
 
     out: dict[str, object] = {
         "gdelt_allow_http": Config.GDELT_ALLOW_HTTP,
-        "cache_key_prefix": "news_v3_30d",
+        "cache_key_prefix": "news_v5_30d",
         "case_hashes": {},
         "composite_sha256": None,
     }
@@ -78,7 +78,7 @@ def _news_provenance(testset_path: Path) -> dict:
     hasher = hashlib.sha256()
     case_hashes: dict[str, str | None] = {}
     for c in sorted(cases, key=lambda x: (str(x.as_of), x.ticker)):
-        cache_key = f"hist::gdelt::{c.ticker}::news_v3_30d::{c.as_of}"
+        cache_key = f"hist::gdelt::{c.ticker}::news_v5_30d::{c.as_of}"
         row = conn.execute("SELECT value FROM cache WHERE key = ?", (cache_key,)).fetchone()
         if row:
             raw_bytes = row[0].encode("utf-8")

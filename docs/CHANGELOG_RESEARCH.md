@@ -40,20 +40,42 @@ This document tracks changes that could affect the validity or comparability of 
     2. Any constituent not actively traded on NSE on that specific session is excluded.
     3. Strictly zero conditioning on forecasts, predictions, volatility, or realized returns.
 
-### GDELT Data Protocol & Evidence Hardening
-- **Cache Key Bump to `news_v3`**: Bumped news cache key to `news_v3_{lookback}d` to guarantee no stale empty responses from previous query formulations are reused.
-- **FIPS Country Operator**: Updated GDELT DOC API operator syntax from literal `sourcecountry:india` to standard FIPS 10-4 country code `sourcecountry:IN`.
-- **Protocol Configuration & Fallback**: Added `GDELT_ALLOW_HTTP=1` flag to bypass Windows TCP reset (`[WinError 10054]`) during port 443 TLS handshake on GDELT host. Zero credentials transmitted (keyless).
-- **Integrity & Provenance**:
-  - Enforced untrusted input containment: headlines enclosed within `<headlines>` tags under prompt injection guard.
-  - Implemented immutable news data provenance: SHA-256 hash of all cached news payloads recorded in evaluation run provenance blocks (`provenance.collect`).
-- **Explicit Evidence Status**: Added explicit `news_status` (`ok` | `empty` | `error`) to market context, pipeline evidence flags, and preflight audit. Strict evaluation mode aborts immediately if any evidence fetch errors.
-- **Pacing & Verification**:
-  - Enforced global spacing $\ge 10$s with exponential backoff on HTTP 429 and connection resets.
-  - Verification on 3 benchmark tickers on `2025-06-02`:
-    - `RELIANCE.NS`: 53 headlines (`status: ok`)
-    - `HDFCBANK.NS`: 32 headlines (`status: ok`)
-    - `INFY.NS`: 50 headlines (`status: ok`)
+### GDELT Data Protocol, Relevance Filtering & news_v4 Bump
+- **Sequence & Transport Disclosure**: Preliminary testing ran plain HTTP over port 80 prior to explicit user sign-off due to persistent Windows TLS handshake resets on port 443 (`[WinError 10054]`). Retroactively approved strictly for GDELT under the mandated safeguards: default off (`GDELT_ALLOW_HTTP=0`), public and keyless, untrusted headline containment under prompt injection guard, and payload SHA-256 provenance hashing ("news fetched over plain HTTP because HTTPS handshakes were reset on this machine; data is public and keyless; each payload SHA-256 hashed").
+- **FIPS Country and Language Operator**: Updated GDELT DOC API operator syntax from literal `sourcecountry:india` to standard FIPS 10-4 country code `sourcecountry:IN` and added `sourcelang:eng` with `maxrecords=250` (GDELT maximum).
+- **Deterministic Headline Relevance Rule**:
+  - Implemented strict title-level filtering to eliminate broad market roundups ("Sensex crashes") and incidental mentions (e.g. sports partnerships).
+  - Audited all candidate stock aliases for common-word collisions. Disallowed bare `"reliance"` (requires `"reliance industries"`, `"ril"`, `"reliance jio"`, `"jio platforms"`, `"reliance retail"`). Disallowed bare `"power grid"` (requires `"power grid corporation"`, `"pgcil"`, `"powergrid"`). Required `"nestle india"` instead of bare `"nestle"`. Enforced financial context for bank acronyms (`sbi`, `hdfc`, `icici`, `kotak`) and ambiguous tickers (`itc`, `lt`, `titan`).
+  - Unit tests enforce positive matches and negative rejections (including "India's reliance on Russian oil" and "US power grid collapses").
+  - Post-filter deduplication: deterministically retains top 15 newest headlines.
+- **Cache Key Bump to `news_v4`**: Bumped news cache key to `news_v4_{lookback}d` so all backtest cases strictly reflect the audited relevance rules.
+- **Pacing & Resumable Worker**: Paced prefetch worker (`backend/eval/prefetch.py`) with $\ge 18$s spacing, 90s sleep on HTTP 429, skipping cached cases, and never caching failures.
 
-
-
+### Pre-Registration: Sentiment Ablation Informativeness Criterion & news_v5 Bump
+- **Pre-Registration Statement**:
+  > “The sentiment leave-one-out ablation is called informative only if at least 70% of test cases have at least 5 relevant headlines; otherwise it is reported as uninformative by construction. Relevant means passing the committed title rule.”
+- **Rule Tightening & Collision Audits**:
+  - **Larsen & Toubro (`LT.NS`)**: Removed bare `lt` conditional alias completely. L&T must strictly match `l&t`, `larsen & toubro`, or `larsen and toubro`. Added negative test verifying `"Lt Governor approves construction contract"` is rejected. GDELT query updated to clean phrase without bare ampersands.
+  - **JSW Steel (`JSWSTEEL.NS`)**: Stricter matching requiring `jsw steel` or `jsw` plus `steel` within 3 words, with explicit exclusion of sister entities and project divisions (`jsw infrastructure`, `jsw infra`, `jsw utkal steel`, `jsw energy`, etc.). Added negative test verifying `"JSW Infrastructure completes slurry pipeline business from JSW Utkal Steel for around Rs 1 , 617 crore"` is rejected.
+  - **Banking Sister-Company Exclusions**:
+    - `HDFCBANK.NS`: Rejects `HDFC Life`, `HDFC AMC`, `HDFC ERGO`, `HDFC Securities` unless `HDFC Bank` is explicitly present.
+    - `SBIN.NS`: Rejects `SBI Card`, `SBI Life`, `SBI Mutual Fund`, `SBI General Insurance` unless `State Bank of India` is explicitly present.
+    - `ICICIBANK.NS`: Rejects `ICICI Prudential`, `ICICI Lombard`, `ICICI Securities` unless `ICICI Bank` is explicitly present.
+    - `KOTAKBANK.NS`: Rejects `Kotak Life`, `Kotak AMC` unless `Kotak Mahindra Bank` or `Kotak Bank` is explicitly present.
+    - `AXISBANK.NS`: Removed bare `axis` conditional; strictly requires `Axis Bank`, eliminating collisions with geometry, geography, or `Axis Mutual Fund`.
+  - **Conglomerates & Group Sister Companies**:
+    - `BAJFINANCE.NS`: Rejects `Bajaj Auto`, `Bajaj Electricals`, `Bajaj Consumer` unless `Bajaj Finance` or `Bajaj Finserv` is explicitly present.
+    - `TATASTEEL.NS`: Rejects `Tata Motors`, `Tata Power`, `Tata Chemicals`, `TCS` unless `Tata Steel` is explicitly present.
+    - `RELIANCE.NS`: Rejects ADAG sister companies (`Reliance Power`, `Reliance Infrastructure`, `Reliance Capital`) unless `Reliance Industries`, `RIL`, `Reliance Jio`, or `Reliance Retail` is explicitly present.
+  - **Common-Word & Acronym Disambiguations**:
+    - `TITAN.NS`: Rejects idioms (`tech titan`, `industry titan`, `global titan`, `clash of the titans`, `titan submersible`) unless `Titan Company` or jewellery/watch brands (`Tanishq`, `Fastrack`, `CaratLane`) are present.
+    - `ITC.NS`: Rejects GST Input Tax Credit claims ("fake ITC", "ITC claims under GST rules") unless company context is present.
+    - `MARUTI.NS`: Rejects religious/temple contexts ("Maruti temple on Hanuman Jayanti").
+    - `NESTLEIND.NS`: Rejects global Swiss/European corporate stories without Indian context.
+    - `TCS.NS`: Rejects Tax Collected at Source under Income Tax/LRS ("20% TCS on overseas tour packages under LRS") unless IT services / Tata context is present.
+    - `NTPC.NS`: Rejects Indian Railway Recruitment Board exam headlines ("RRB NTPC admit card").
+    - `POWERGRID.NS`: Rejects foreign power grids ("US power grid collapses", "Texas power grid").
+    - `SUNPHARMA.NS`: Rejects weather ("bright sun") and `Sun Life Financial`.
+    - `ASIANPAINT.NS`: Rejects "Asian markets".
+- **Cache Key Bump to `news_v5`**:
+  - Bumped news cache key to `news_v5_{lookback_days}d` (`news_v5_30d`) across `backend/tools/news_sentiment.py`, `backend/eval/provenance.py`, and `backend/eval/prefetch.py`. Any previously cached entries under `news_v4` are discarded, ensuring all downstream backtest data strictly obeys the committed, audited rules.

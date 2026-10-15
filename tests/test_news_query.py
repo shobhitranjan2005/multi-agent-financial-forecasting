@@ -5,7 +5,7 @@ from backend.tools.news_sentiment import NEWS_ALIASES, _company_query, _strip_le
 
 
 def test_legal_suffix_is_not_used_as_an_exact_phrase():
-    assert _company_query("AXISBANK.NS", None) == '"Axis Bank" sourcecountry:IN'
+    assert _company_query("AXISBANK.NS", None) == '"Axis Bank" sourcecountry:IN sourcelang:eng'
     assert _strip_legal("Bharti Airtel Limited") == "Bharti Airtel"
     assert _strip_legal("Foo Ltd.") == "Foo"
 
@@ -13,11 +13,12 @@ def test_legal_suffix_is_not_used_as_an_exact_phrase():
 def test_multiple_aliases_are_ORed():
     q = _company_query("TCS.NS", None)
     assert q.startswith('("Tata Consultancy Services" OR TCS)')
+    assert "sourcelang:eng" in q
 
 
 def test_unknown_ticker_falls_back_to_cleaned_name_then_symbol():
-    assert _company_query("NEWCO.NS", "New Co Limited") == '"New Co" sourcecountry:IN'
-    assert _company_query("NEWCO.NS", None) == "NEWCO sourcecountry:IN"
+    assert _company_query("NEWCO.NS", "New Co Limited") == '"New Co" sourcecountry:IN sourcelang:eng'
+    assert _company_query("NEWCO.NS", None) == "NEWCO sourcecountry:IN sourcelang:eng"
 
 
 def test_every_seed_stock_has_a_curated_alias():

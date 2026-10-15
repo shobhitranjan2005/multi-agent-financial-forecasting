@@ -80,14 +80,14 @@ def test_news_provenance_hashing(tmp_path):
     conn.execute("CREATE TABLE cache (key TEXT PRIMARY KEY, value TEXT, created_at REAL, ttl REAL)")
     conn.execute(
         "INSERT INTO cache VALUES (?, ?, ?, ?)",
-        ("hist::gdelt::RELIANCE.NS::news_v3_30d::2025-06-02", json.dumps({"headlines": [{"title": "RIL"}]}), 0, 0),
+        ("hist::gdelt::RELIANCE.NS::news_v5_30d::2025-06-02", json.dumps({"headlines": [{"title": "RIL"}]}), 0, 0),
     )
     conn.commit()
     conn.close()
 
     with patch("backend.eval.provenance.Config.CACHE_DB", db_file):
         prov = provenance._news_provenance(ts_file)
-        assert prov["cache_key_prefix"] == "news_v3_30d"
+        assert prov["cache_key_prefix"] == "news_v5_30d"
         assert "RELIANCE.NS::2025-06-02" in prov["case_hashes"]
         assert prov["case_hashes"]["RELIANCE.NS::2025-06-02"] is not None
         assert prov["case_hashes"]["INFY.NS::2025-06-02"] is None

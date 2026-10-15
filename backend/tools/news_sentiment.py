@@ -174,22 +174,251 @@ def _dedup(articles: list[dict], threshold: float = 0.88) -> list[dict]:
 # querying it silently returns nothing. A fixed table also makes the query
 # independent of Yahoo (reproducible, and no non-point-in-time lookup). Reviewable
 # by a human: edit here, never inside a result.
+# Names Indian press actually prints. The legal name Yahoo returns ("Axis Bank
+# Limited") is almost never written that way, and GDELT matches exact phrases, so
+# querying it silently returns nothing. A fixed table also makes the query
+# independent of Yahoo (reproducible, and no non-point-in-time lookup). Reviewable
+# by a human: edit here, never inside a result.
 NEWS_ALIASES: dict[str, list[str]] = {
-    "RELIANCE": ["Reliance Industries"], "TCS": ["Tata Consultancy Services", "TCS"],
-    "HDFCBANK": ["HDFC Bank"], "INFY": ["Infosys"], "ICICIBANK": ["ICICI Bank"],
-    "HINDUNILVR": ["Hindustan Unilever"], "ITC": ["ITC Limited", "ITC share"],
-    "SBIN": ["State Bank of India", "SBI"], "BHARTIARTL": ["Bharti Airtel"],
-    "KOTAKBANK": ["Kotak Mahindra Bank"], "LT": ["Larsen & Toubro", "Larsen and Toubro"],
-    "AXISBANK": ["Axis Bank"], "ASIANPAINT": ["Asian Paints"], "MARUTI": ["Maruti Suzuki"],
-    "SUNPHARMA": ["Sun Pharma", "Sun Pharmaceutical"], "TITAN": ["Titan Company"],
-    "ULTRACEMCO": ["UltraTech Cement"], "WIPRO": ["Wipro"], "NESTLEIND": ["Nestle India"],
-    "TATAMOTORS": ["Tata Motors"], "TATASTEEL": ["Tata Steel"], "JSWSTEEL": ["JSW Steel"],
-    "POWERGRID": ["Power Grid Corporation", "Power Grid"], "NTPC": ["NTPC"],
-    "ONGC": ["ONGC", "Oil and Natural Gas Corporation"], "HCLTECH": ["HCLTech", "HCL Technologies"],
-    "TECHM": ["Tech Mahindra"], "BAJFINANCE": ["Bajaj Finance"], "CIPLA": ["Cipla"],
+    "RELIANCE": ["Reliance Industries", "RIL", "Reliance Jio", "Jio Platforms", "Reliance Retail"],
+    "TCS": ["Tata Consultancy Services", "TCS"],
+    "HDFCBANK": ["HDFC Bank"],
+    "INFY": ["Infosys", "Infy"],
+    "ICICIBANK": ["ICICI Bank"],
+    "HINDUNILVR": ["Hindustan Unilever", "HUL"],
+    "ITC": ["ITC Limited", "ITC Ltd"],
+    "SBIN": ["State Bank of India"],
+    "BHARTIARTL": ["Bharti Airtel"],
+    "KOTAKBANK": ["Kotak Mahindra Bank", "Kotak Bank"],
+    "LT": ["Larsen and Toubro"],
+    "AXISBANK": ["Axis Bank"],
+    "ASIANPAINT": ["Asian Paints", "Asian Paint"],
+    "MARUTI": ["Maruti Suzuki"],
+    "SUNPHARMA": ["Sun Pharma", "Sun Pharmaceutical"],
+    "TITAN": ["Titan Company"],
+    "ULTRACEMCO": ["UltraTech Cement"],
+    "WIPRO": ["Wipro"],
+    "NESTLEIND": ["Nestle India"],
+    "TATAMOTORS": ["Tata Motors"],
+    "TATASTEEL": ["Tata Steel"],
+    "JSWSTEEL": ["JSW Steel"],
+    "POWERGRID": ["Power Grid Corporation", "Powergrid", "PGCIL"],
+    "NTPC": ["NTPC"],
+    "ONGC": ["ONGC", "Oil and Natural Gas Corporation"],
+    "HCLTECH": ["HCLTech", "HCL Technologies"],
+    "TECHM": ["Tech Mahindra"],
+    "BAJFINANCE": ["Bajaj Finance", "Bajaj Finserv"],
+    "CIPLA": ["Cipla"],
     "DRREDDY": ["Dr Reddy's", "Dr Reddys"],
 }
 _LEGAL = re.compile(r"\s+(limited|ltd\.?|corporation|corp\.?|inc\.?)\s*$", re.I)
+
+
+# Primary unambiguous aliases matched as case-insensitive whole words (\b<alias>\b).
+# Specifically audited: bare "reliance" and bare "power grid" are disallowed to prevent
+# generic English collisions ("reliance on oil", "US power grid").
+PRIMARY_TITLE_ALIASES: dict[str, list[str]] = {
+    "RELIANCE": ["reliance industries", "ril", "reliance jio", "jio platforms", "reliance retail"],
+    "TCS": ["tata consultancy services", "tcs"],
+    "HDFCBANK": ["hdfc bank"],
+    "INFY": ["infosys", "infy"],
+    "ICICIBANK": ["icici bank"],
+    "HINDUNILVR": ["hindustan unilever", "hul"],
+    "ITC": ["itc limited", "itc ltd"],
+    "SBIN": ["state bank of india"],
+    "BHARTIARTL": ["bharti airtel", "airtel"],
+    "KOTAKBANK": ["kotak mahindra bank", "kotak bank"],
+    "LT": ["larsen & toubro", "larsen and toubro", "l&t"],
+    "AXISBANK": ["axis bank"],
+    "ASIANPAINT": ["asian paints", "asian paint"],
+    "MARUTI": ["maruti suzuki"],
+    "SUNPHARMA": ["sun pharma", "sun pharmaceutical", "sun pharmaceuticals"],
+    "TITAN": ["titan company", "titan co"],
+    "ULTRACEMCO": ["ultratech cement", "ultratech"],
+    "WIPRO": ["wipro"],
+    "NESTLEIND": ["nestle india"],
+    "TATAMOTORS": ["tata motors"],
+    "TATASTEEL": ["tata steel"],
+    "JSWSTEEL": ["jsw steel"],
+    "POWERGRID": ["power grid corporation", "power grid corp", "pgcil", "powergrid"],
+    "NTPC": ["ntpc", "national thermal power corporation"],
+    "ONGC": ["ongc", "oil and natural gas corporation"],
+    "HCLTECH": ["hcltech", "hcl technologies", "hcl tech"],
+    "TECHM": ["tech mahindra", "techm"],
+    "BAJFINANCE": ["bajaj finance", "bajaj finserv"],
+    "CIPLA": ["cipla"],
+    "DRREDDY": ["dr reddy", "dr reddys", "dr reddy's", "dr. reddy"],
+}
+
+# Ticker-specific conditional rules: (alias, required_context_words_set)
+# Note: LT and AXISBANK are removed from conditional rules to eliminate collisions
+# with military rank / civil administrative titles ("Lt Governor") and geometry / unrelated text ("axis").
+CONDITIONAL_TITLE_RULES: dict[str, list[tuple[str, set[str]]]] = {
+    "ITC": [("itc", {
+        "share", "shares", "stock", "stocks", "cigarette", "cigarettes",
+        "tobacco", "fmcg", "hotel", "hotels", "dividend", "results",
+        "profit", "pat", "q1", "q2", "q3", "q4", "revenue", "paperboards"
+    })],
+    "TITAN": [("titan", {
+        "jewellery", "jewelry", "watch", "watches", "eyewear", "tanishq",
+        "fastrack", "mia", "caratlane", "zoya", "shares", "stock", "stocks",
+        "sales", "profit", "q1", "q2", "q3", "q4", "results"
+    })],
+    "SBIN": [("sbi", {
+        "bank", "banking", "shares", "stock", "stocks", "loan", "loans",
+        "branch", "branches", "chairman", "q1", "q2", "q3", "q4", "results",
+        "pat", "profit", "lender", "deposit", "deposits", "npa", "npas"
+    })],
+    "HDFCBANK": [("hdfc", {
+        "bank", "banking", "shares", "stock", "stocks", "loan", "loans",
+        "pat", "profit", "q1", "q2", "q3", "q4", "results", "lender",
+        "deposit", "deposits", "npa", "npas"
+    })],
+    "ICICIBANK": [("icici", {
+        "bank", "banking", "shares", "stock", "stocks", "loan", "loans",
+        "pat", "profit", "q1", "q2", "q3", "q4", "results", "lender",
+        "deposit", "deposits", "npa", "npas"
+    })],
+    "KOTAKBANK": [("kotak", {
+        "bank", "banking", "shares", "stock", "stocks", "loan", "loans",
+        "pat", "profit", "q1", "q2", "q3", "q4", "results", "mahindra",
+        "lender", "deposit", "deposits"
+    })],
+    "MARUTI": [("maruti", {
+        "suzuki", "car", "cars", "auto", "automobile", "sales", "suv",
+        "plant", "ev", "shares", "stock", "stocks", "q1", "q2", "q3", "q4", "results"
+    })],
+    "NESTLEIND": [("nestle", {
+        "india", "maggi", "nescafe", "cerelac", "kitkat", "fmcg",
+        "food", "packaged", "shares", "stock", "stocks", "q1", "q2", "q3", "q4", "results"
+    })],
+}
+
+# Exclusion rules: if any pattern matches, the headline is rejected UNLESS the full,
+# unambiguous corporate name (e.g. "Tata Consultancy Services", "HDFC Bank", "JSW Steel")
+# is explicitly present and not part of an excluded sister company or division.
+EXCLUSION_RULES: dict[str, list[re.Pattern]] = {
+    "HDFCBANK": [
+        re.compile(r"\b(?:hdfc\s+(?:life|amc|mutual fund|ergo|standard life|securities))\b", re.I),
+    ],
+    "SBIN": [
+        re.compile(r"\b(?:sbi\s+(?:cards?|life|general insurance|mutual fund|mf))\b", re.I),
+    ],
+    "ICICIBANK": [
+        re.compile(r"\b(?:icici\s+(?:prudential|pru|lombard|securities))\b", re.I),
+    ],
+    "KOTAKBANK": [
+        re.compile(r"\b(?:kotak\s+(?:life|general insurance|amc|mutual fund))\b", re.I),
+    ],
+    "BAJFINANCE": [
+        re.compile(r"\b(?:bajaj\s+(?:auto|electricals|consumer|hindusthan))\b", re.I),
+    ],
+    "TATASTEEL": [
+        re.compile(r"\b(?:tata\s+(?:motors|power|consultancy|chemicals|consumer|elxsi|technologies))\b", re.I),
+    ],
+    "JSWSTEEL": [
+        re.compile(r"\b(?:jsw\s+(?:infrastructure|infra|utkal(?:\s+steel)?|energy|cement|paints|severfield))\b", re.I),
+    ],
+    "TITAN": [
+        re.compile(r"\b(?:tech|industry|global|corporate|oil|retail|software|banking|wall street|asian)\s+titan\b", re.I),
+        re.compile(r"\b(?:clash of the titans|titan submersible|saturn(?:'s)?\s+moon\s+titan)\b", re.I),
+    ],
+    "ITC": [
+        re.compile(r"\b(?:input tax credit|fake itc|itc fraud|itc reversal|itc mismatch|availment of itc)\b", re.I),
+        re.compile(r"\b(?:gst|tax|customs)\b.*\b(?:itc|input tax credit)\b", re.I),
+    ],
+    "MARUTI": [
+        re.compile(r"\b(?:temple|mandir|hanuman|jayanti|puja|devotees|idol|darshan)\b", re.I),
+    ],
+    "NESTLEIND": [
+        re.compile(r"\b(?:switzerland|swiss|germany|vevey)\b", re.I),
+    ],
+    "TCS": [
+        re.compile(r"\b(?:tax collected at source|remittance|remittances|lrs|tour packages?|foreign tour)\b", re.I),
+    ],
+    "NTPC": [
+        re.compile(r"\b(?:rrb|railway recruitment|admit card|typing test|cbt|exam dates?)\b", re.I),
+    ],
+    "RELIANCE": [
+        re.compile(r"\b(?:reliance\s+(?:power|infrastructure|infra|capital|communications|naval))\b", re.I),
+    ],
+}
+
+FULL_NAME_OVERRIDES: dict[str, list[str]] = {
+    "TCS": ["tata consultancy services"],
+    "NTPC": ["national thermal power corporation"],
+    "RELIANCE": ["reliance industries", "ril", "reliance jio", "reliance retail"],
+    "HDFCBANK": ["hdfc bank"],
+    "SBIN": ["state bank of india"],
+    "ICICIBANK": ["icici bank"],
+    "KOTAKBANK": ["kotak mahindra bank", "kotak bank"],
+    "JSWSTEEL": ["jsw steel"],
+}
+
+
+def is_headline_relevant(title: str, ticker: str, lang: str = "English") -> bool:
+    """Deterministic title-level relevance filter.
+
+    Guarantees that generic market roundups, regional language text, and incidental
+    word collisions (e.g. 'reliance on oil', 'US power grid') are rejected.
+    """
+    if not title:
+        return False
+    if lang and lang.lower() not in ("english", "eng", "unknown", ""):
+        return False
+    ascii_ratio = sum(1 for c in title if ord(c) < 128) / len(title)
+    if ascii_ratio < 0.80:
+        return False
+
+    base = tickers.base_symbol(ticker)
+    low = title.lower()
+
+    # 1. Check exclusions (sister companies, unrelated government/exam acronyms, idioms)
+    exclusions = EXCLUSION_RULES.get(base, [])
+    has_exclusion = any(ex.search(low) for ex in exclusions)
+
+    # 2. Primary unambiguous alias match
+    primaries = PRIMARY_TITLE_ALIASES.get(base, [base.lower()])
+    primary_matched = any(re.search(r"\b" + re.escape(p) + r"\b", low) for p in primaries)
+
+    if primary_matched:
+        if not has_exclusion:
+            return True
+        # If an exclusion pattern matched (e.g. sister company mentioned),
+        # only accept if an unambiguous full corporate name override is present.
+        fns = FULL_NAME_OVERRIDES.get(base, [])
+        if fns and any(re.search(r"\b" + re.escape(fn) + r"\b", low) for fn in fns):
+            # Special check for JSW Steel: "jsw utkal steel" should NOT match "jsw steel"
+            if base == "JSWSTEEL" and re.search(r"\bjsw utkal steel\b", low) and not re.search(r"\bjsw steel\b", low):
+                return False
+            return True
+        return False
+
+    if has_exclusion:
+        return False
+
+    # 3. Special handling for JSWSTEEL conditional:
+    # Require "jsw" plus "steel" within 3 words (excluding sister entities)
+    if base == "JSWSTEEL":
+        m = re.search(r"\bjsw\b(?:\W+(\w+)){1,3}?\W+\bsteel\b|\bsteel\b(?:\W+(\w+)){1,3}?\W+\bjsw\b", low)
+        if m:
+            span_text = m.group(0)
+            words_in_span = set(re.findall(r"\b\w+\b", span_text))
+            disallowed = {"utkal", "infrastructure", "infra", "energy", "cement", "paints", "severfield"}
+            if not words_in_span.intersection(disallowed):
+                return True
+        return False
+
+    # 4. Conditional alias match with required company context
+    conditionals = CONDITIONAL_TITLE_RULES.get(base, [])
+    if conditionals:
+        words = set(re.findall(r"\b\w+\b", low))
+        for alias, context_set in conditionals:
+            if re.search(r"\b" + re.escape(alias) + r"\b", low):
+                if words.intersection(context_set):
+                    return True
+
+    return False
 
 
 def _strip_legal(name: str) -> str:
@@ -205,7 +434,7 @@ def _company_query(ticker: str, company_name: Optional[str]) -> str:
         names = [_strip_legal(company_name or base)]
     phrases = [f'"{n}"' if " " in n else n for n in names]
     q = phrases[0] if len(phrases) == 1 else "(" + " OR ".join(phrases) + ")"
-    return f"{q} sourcecountry:IN"
+    return f"{q} sourcecountry:IN sourcelang:eng"
 
 
 def get_news(
@@ -213,7 +442,7 @@ def get_news(
     as_of: str | date | datetime,
     *,
     lookback_days: int = 30,
-    max_records: int = 75,
+    max_records: int = 250,
     company_name: Optional[str] = None,
 ) -> dict:
     """Indian-press headlines published at or before `as_of`.
@@ -271,25 +500,38 @@ def get_news(
                 "language": a.get("language"),
             })
 
-        deduped = _dedup(articles)
+        # 1. Deterministic title relevance filtering
+        relevant_articles = [
+            a for a in articles
+            if is_headline_relevant(a.get("title", ""), ticker, a.get("language") or "English")
+        ]
+        # 2. Sort newest first deterministically
+        relevant_articles.sort(key=lambda x: x.get("date", ""), reverse=True)
+        # 3. Deduplicate
+        deduped = _dedup(relevant_articles)
+        # 4. Retain at most 15 newest headlines deterministically
+        final_headlines = deduped[:15]
+
         return {
             "ticker": ticker,
             "as_of": as_of_d.isoformat(),
             "query": params["query"],
             "company_name": company_name,
             "window_days": lookback_days,
-            "headlines": deduped,
+            "headlines": final_headlines,
             "raw_count": len(raw),
             "after_cutoff_filter": len(articles),
+            "after_relevance_filter": len(relevant_articles),
             "after_dedup": len(deduped),
-            "status": "ok" if deduped else "empty",
+            "retained_count": len(final_headlines),
+            "status": "ok" if final_headlines else "empty",
             "limitations": [
                 "GDELT provides headline metadata and tone, not full article text.",
                 "Coverage of smaller Indian outlets is uneven.",
             ],
         }
 
-    return cache.historical("gdelt", ticker, f"news_v3_{lookback_days}d", as_of_d.isoformat(), loader)
+    return cache.historical("gdelt", ticker, f"news_v5_{lookback_days}d", as_of_d.isoformat(), loader)
 
 
 def get_live_rss(limit_per_feed: int = 15) -> dict:
