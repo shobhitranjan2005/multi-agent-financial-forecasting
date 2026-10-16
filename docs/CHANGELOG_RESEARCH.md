@@ -79,3 +79,29 @@ This document tracks changes that could affect the validity or comparability of 
     - `ASIANPAINT.NS`: Rejects "Asian markets".
 - **Cache Key Bump to `news_v5`**:
   - Bumped news cache key to `news_v5_{lookback_days}d` (`news_v5_30d`) across `backend/tools/news_sentiment.py`, `backend/eval/provenance.py`, and `backend/eval/prefetch.py`. Any previously cached entries under `news_v4` are discarded, ensuring all downstream backtest data strictly obeys the committed, audited rules.
+
+### Pre-Registration: Statistical Testing Protocol, Research Questions, and Free-Tier Execution Design
+
+- **Primary Research Question**:
+  - Does the full multi-agent architecture (`multiagent`) achieve superior point-in-time directional accuracy over the single-LLM baseline (`baseline`) on the frozen test set?
+- **Primary Statistical Test**:
+  - The primary confirmatory test is the **paired date-block bootstrap 95% confidence interval of the accuracy difference** ($\Delta = \text{Accuracy}_{\text{multiagent}} - \text{Accuracy}_{\text{baseline}}$), clustered by evaluation date ($B = 2,000$ resamples) to respect cross-ticker correlation within sessions.
+  - The **McNemar test** is reported as a secondary paired test of contingency tables and is explicitly labelled **optimistic** (as it assumes cross-ticker independence within dates).
+- **Secondary Evaluation Metrics**:
+  - Probability calibration and probability error: **Brier Score** and **Overconfidence Gap**.
+  - Price target error: **MAE** (INR) and **MAPE** (%).
+  - Computational cost: **Mean tokens per forecast**, **Mean wall-clock seconds**, and **Total LLM calls**.
+- **Exploratory Analyses**:
+  - Does the debate stage earn its token cost? (`multiagent` vs. `multiagent-nodebate` accuracy $\Delta$ and token $\Delta$).
+  - Specialist leave-one-out ablations (`multiagent-no-technical`, `multiagent-no-fundamental`, `multiagent-no-sentiment`, `multiagent-no-macro`) are treated as exploratory hypothesis-generating analyses; at least one specialist adding zero marginal accuracy is an expected finding, not an error.
+- **Invariance & Reporting Integrity Guarantees**:
+  - Strictly **no results-driven changes** to evaluation metrics, decision thresholds, inclusion criteria, or constituent exclusions.
+  - **Complete Reporting**: All runs, failures, exceptions, and parse failures are reported transparently in results artifacts and thesis tables without selective omissions.
+- **Free-Tier Operational Design & Quota Constraints**:
+  - All experiments are executed strictly under the **Google AI Studio Free Tier** (no billing).
+  - Pacing enforces `LLM_MAX_RPM` (default 12 RPM).
+  - The daily request quota (~1,500 RPD) is handled as a **pause signal**, not an experiment failure or strict-mode abort. When a daily quota exhaustion occurs, the runner logs progress, pauses, retries every 30 minutes until reset (midnight Pacific), and resumes cleanly from cache.
+  - **Execution Plan**:
+    - *Round 1*: `naive-momentum`, `naive-alwaysup`, `baseline`, `multiagent`, `multiagent-nodebate`, followed by the 4 leave-one-out configurations (1 repeat each across the 68-case frozen set).
+    - *Round 2*: If and only if Round 1 is complete and quota allows, 2 additional repeats with fresh cache nonces for `baseline`, `multiagent`, and `multiagent-nodebate` only (to measure stochastic sampling variance).
+    - If daily quotas or submission deadlines prevent Round 2 from completing, **unfinished rounds will be explicitly reported as unfinished**; the 1-repeat core results will serve as the primary findings with full variance caveats disclosed.
