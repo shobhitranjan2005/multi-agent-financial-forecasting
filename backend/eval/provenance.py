@@ -36,7 +36,10 @@ def require_pinned_model() -> None:
 
 
 def _sha256(path: Path) -> str | None:
-    return hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+    if not path.exists():
+        return None
+    raw = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(raw).hexdigest()
 
 
 def _git(*args: str) -> str | None:
@@ -94,11 +97,46 @@ def _news_provenance(testset_path: Path) -> dict:
     return out
 
 
+def is_git_dirty() -> bool:
+    """True if working tree has relevant uncommitted changes.
+
+    Ignores untracked files under results/ and data/ cache or *.db,
+    while modified tracked files and untracked source files elsewhere
+    must still count.
+    """
+    raw = _git("status", "--porcelain")
+    if not raw:
+        return False
+    for line in raw.splitlines():
+        if not line.strip():
+            continue
+        status = line[:2]
+        path = line[3:].strip()
+        if path.startswith('"') and path.endswith('"'):
+            path = path[1:-1]
+        norm_path = path.replace("\\", "/")
+
+        if status == "??":
+            if norm_path.startswith("results/"):
+                continue
+            if norm_path.startswith("data/") and (
+                norm_path.endswith(".db")
+                or norm_path.endswith(".db-wal")
+                or norm_path.endswith(".db-shm")
+                or "cache" in norm_path.lower()
+            ):
+                continue
+            return True
+        else:
+            return True
+    return False
+
+
 def collect(testset_path: Path, system: str) -> dict:
     data = {
         "testset_sha256": _sha256(Path(testset_path)),
         "git_commit": _git("rev-parse", "HEAD"),
-        "git_dirty": bool(_git("status", "--porcelain")),
+        "git_dirty": is_git_dirty(),
         "model": None if system.startswith("naive") else Config.GEMINI_MODEL,
         "horizon_sessions": Config.HORIZON_SESSIONS,
         "packages": {p: _ver(p) for p in _PKGS},
