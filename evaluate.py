@@ -201,6 +201,25 @@ def cmd_subset(args) -> int:
     return 0
 
 
+def cmd_run_staged(args) -> int:
+    from backend.eval import runner, testset as testset_mod
+    ts_path = Path(args.testset) if getattr(args, "testset", None) else testset_mod.TESTSET_PATH
+    try:
+        runner.run_staged_plan(
+            stage_name=args.round,
+            testset_path=ts_path,
+            limit=args.limit,
+            auto_push=not args.no_push,
+        )
+    except runner.RunnerStopCondition as exc:
+        print(f"\n  RUNNER STOP CONDITION: {exc}\n", file=sys.stderr)
+        return 2
+    except Exception as exc:
+        print(f"\n  UNEXPECTED ERROR: {type(exc).__name__}: {exc}\n", file=sys.stderr)
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="evaluate", description="Leakage-free evaluation harness.")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -235,6 +254,14 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--limit", type=int)
     r.add_argument("--nonce", default="")
     r.set_defaults(func=cmd_run)
+
+    rs = sub.add_parser("run-staged", help="run evaluation suite with free-tier staged execution and quota pauses")
+    rs.add_argument("--round", choices=["all", "1", "2", "cost"], default="all",
+                    help="which stage to execute (default: all)")
+    rs.add_argument("--testset", default="", help="path to test set (default: data/testset.json)")
+    rs.add_argument("--limit", type=int, help="limit test cases per system (for testing)")
+    rs.add_argument("--no-push", action="store_true", help="skip git commit and push after each system")
+    rs.set_defaults(func=cmd_run_staged)
 
     a = sub.add_parser("ablate", help="Phase 4: run the whole ablation suite")
     a.add_argument("--systems", default="",

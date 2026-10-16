@@ -95,6 +95,9 @@ def _specialist_node(name: str, module, state_key: str):
                 nonce=state.get("nonce", ""),
             )
         except Exception as exc:
+            from backend.eval.runner import is_daily_quota_error
+            if is_daily_quota_error(exc):
+                raise
             return {state_key: None, "errors": [f"{name}: {type(exc).__name__}: {exc}"]}
         return {state_key: rep, "errors": [f"{name}: {err}"] if err else []}
 

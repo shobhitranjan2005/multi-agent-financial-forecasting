@@ -100,6 +100,8 @@ def run(
     testset_path: Path = testset_mod.TESTSET_PATH,
     progress: bool = True,
     strict: bool = True,
+    pause_on_quota: bool = False,
+    quota_handler: Optional[Callable[[Exception, Any, int, int], None]] = None,
     **forecaster_kwargs,
 ) -> dict:
     """Run `system` over the frozen test set and return scored results.
@@ -124,7 +126,10 @@ def run(
     failures: list[dict] = []
     started = time.time()
 
-    for i, case in enumerate(cases, 1):
+    idx = 0
+    while idx < len(cases):
+        case = cases[idx]
+        i = idx + 1
         if progress:
             print(f"  [{i:>3}/{len(cases)}] {case.ticker:<14} {case.as_of} ... ",
                   end="", flush=True)
@@ -138,6 +143,14 @@ def run(
         try:
             rec = fn(case.ticker, case.as_of, **call_kw)
         except Exception as exc:
+            if pause_on_quota:
+                from backend.eval.runner import is_daily_quota_error
+                if is_daily_quota_error(exc):
+                    if quota_handler:
+                        quota_handler(exc, case, i, len(cases))
+                    else:
+                        time.sleep(1800)
+                    continue  # Retry this same case
             if strict:
                 raise RuntimeError(
                     f"ABORTED RUN (strict mode): evidence or forecaster error on case "
@@ -148,11 +161,13 @@ def run(
                              "error": f"{type(exc).__name__}: {exc}"})
             if progress:
                 print(f"FAILED ({type(exc).__name__})")
+            idx += 1
             continue
 
         records.append(rec)
         s = score_record(rec)
         scored.append(s)
+        idx += 1
         if progress:
             mark = "?" if s.direction_correct is None else ("OK " if s.direction_correct else "X  ")
             print(f"{mark} pred={s.predicted_direction or '-':<5} "

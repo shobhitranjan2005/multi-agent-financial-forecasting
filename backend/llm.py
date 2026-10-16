@@ -169,6 +169,19 @@ def _is_rate_limit(exc: Exception) -> bool:
     return any(s in text for s in ("429", "503", "resource_exhausted", "quota", "rate limit", "unavailable", "high demand"))
 
 
+_live_call_hooks: list[Callable[[], None]] = []
+
+
+def register_live_call_hook(hook: Callable[[], None]) -> None:
+    if hook not in _live_call_hooks:
+        _live_call_hooks.append(hook)
+
+
+def unregister_live_call_hook(hook: Callable[[], None]) -> None:
+    if hook in _live_call_hooks:
+        _live_call_hooks.remove(hook)
+
+
 @retry(
     retry=retry_if_exception_type(LLMRateLimit),
     wait=wait_exponential(multiplier=2, min=4, max=60),
@@ -196,6 +209,11 @@ def _call_gemini(
         cfg["response_schema"] = schema
 
     _throttle()
+    for hook in list(_live_call_hooks):
+        try:
+            hook()
+        except Exception:
+            pass
     try:
         resp = client.models.generate_content(
             model=model,
@@ -204,7 +222,8 @@ def _call_gemini(
         )
     except Exception as exc:  # SDK raises provider-specific errors
         if _is_rate_limit(exc):
-            if "perday" in str(exc).lower():   # daily cap: retrying within the day is pointless
+            err_lower = str(exc).lower()
+            if any(k in err_lower for k in ("perday", "per day", "requestsperday", "daily")):   # daily cap: retrying within the day is pointless
                 raise LLMError(
                     "Daily Gemini quota exhausted. Progress is cached; rerun the same command "
                     "tomorrow (or enable billing). " + str(exc)[:200]
