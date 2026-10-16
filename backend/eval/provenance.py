@@ -44,9 +44,10 @@ def _sha256(path: Path) -> str | None:
 
 def _git(*args: str) -> str | None:
     try:
-        return subprocess.check_output(
+        out = subprocess.check_output(
             ["git", *args], cwd=Config.DATA_DIR.parent, text=True, stderr=subprocess.DEVNULL
-        ).strip()
+        )
+        return out.rstrip("\r\n")
     except Exception:
         return None
 
@@ -108,10 +109,22 @@ def is_git_dirty() -> bool:
     if not raw:
         return False
     for line in raw.splitlines():
-        if not line.strip():
+        line_clean = line.rstrip("\r\n")
+        if not line_clean.strip():
             continue
-        status = line[:2]
-        path = line[3:].strip()
+
+        if line_clean.startswith("?? ") or line_clean.startswith("R  ") or line_clean.startswith("D  ") or line_clean.startswith("A  "):
+            path = line_clean[3:].strip()
+        elif line_clean.startswith("M  "):
+            path = line_clean[3:].strip()
+        elif line_clean.startswith("M "):
+            path = line_clean[2:].strip()
+        elif len(line_clean) >= 3 and line_clean[2] == " ":
+            path = line_clean[3:].strip()
+        else:
+            parts = line_clean.split(None, 1)
+            path = parts[1] if len(parts) > 1 else ""
+
         if " -> " in path:
             # Handle renames: orig -> dest
             parts = [p.strip().strip('"').replace("\\", "/") for p in path.split(" -> ")]

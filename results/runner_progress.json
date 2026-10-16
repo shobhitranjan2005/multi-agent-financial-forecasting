@@ -22,6 +22,21 @@
         "json": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\naive-momentum_20261017_013505.json",
         "markdown": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\naive-momentum_20261017_013505.md"
       }
+    },
+    {
+      "system": "naive-alwaysup",
+      "nonce": "",
+      "stage": "round1",
+      "completed_at": "2026-10-16T20:57:17+00:00",
+      "n_scoreable": 68,
+      "directional_accuracy_pct": 41.18,
+      "parse_failures": 0,
+      "parse_failure_rate_pct": 0.0,
+      "files": {
+        "csv": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\naive-alwaysup_20261017_022717.csv",
+        "json": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\naive-alwaysup_20261017_022717.json",
+        "markdown": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\naive-alwaysup_20261017_022717.md"
+      }
     }
   ],
   "run_started_at": "2026-10-16T20:04:54+00:00"
