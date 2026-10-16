@@ -202,11 +202,51 @@ def _pair_stats(a_sys: str, b_sys: str, results: dict) -> str:
         b_bools = [bool(b_map[k]) for k in keys]
         mc = stats.mcnemar_exact(a_bools, b_bools)
         
-        sig = "" if diff_ci["excludes_zero"] else " (no supported difference)"
-        mc_text = f"p={mc['p_value']:.3f} optimistic: assumes independent cases"
-        return f"{diff_ci['mean']*100:+.2f} [{diff_ci['ci_low']*100:+.2f}, {diff_ci['ci_high']*100:+.2f}]{sig} | {mc_text}"
+        sig = " (excludes 0: statistically significant)" if diff_ci["excludes_zero"] else " (includes 0: no supported difference)"
+        mc_text = f"McNemar p={mc['p_value']:.4f} (optimistic: assumes independent cases)"
+        return f"Δ={diff_ci['mean']*100:+.2f} pts, 95% Date-Block CI [{diff_ci['ci_low']*100:+.2f}, {diff_ci['ci_high']*100:+.2f}]{sig} | {mc_text}"
     except Exception as exc:
         return f"error: {exc}"
+
+
+def primary_comparison_verdict(results: dict[str, dict]) -> str:
+    """The primary research question: multiagent vs baseline directional accuracy and secondary metrics."""
+    multi = results.get("multiagent")
+    base = results.get("baseline")
+    if not multi or not base:
+        return "_Primary comparison not available — requires both `multiagent` and `baseline` runs._"
+
+    acc_delta = _delta(multi.get("directional_accuracy_pct"), base.get("directional_accuracy_pct"))
+    acc_stats = _pair_stats("multiagent", "baseline", results)
+    rel_delta = _delta(multi.get("nifty_relative_accuracy_pct"), base.get("nifty_relative_accuracy_pct"))
+    brier_delta = _delta(multi.get("brier_score"), base.get("brier_score"))
+    mape_delta = _delta(multi.get("mape_pct"), base.get("mape_pct"))
+    mae_delta = _delta(multi.get("mae_inr"), base.get("mae_inr"))
+    token_ratio = _ratio(multi.get("mean_tokens_per_forecast"), base.get("mean_tokens_per_forecast"))
+    time_ratio = _ratio(multi.get("mean_seconds_per_forecast"), base.get("mean_seconds_per_forecast"))
+
+    lines = [
+        "| Measure | Multi-Agent (`multiagent`) | Baseline (`baseline`) | Delta (Multi vs Base) |",
+        "| :--- | ---: | ---: | ---: |",
+        f"| **Directional Accuracy % (Primary)** | {_fmt(multi.get('directional_accuracy_pct'))} | "
+        f"{_fmt(base.get('directional_accuracy_pct'))} | **{acc_delta}**<br/>_{acc_stats}_ |",
+        f"| NIFTY-relative accuracy % | {_fmt(multi.get('nifty_relative_accuracy_pct'))} | "
+        f"{_fmt(base.get('nifty_relative_accuracy_pct'))} | {rel_delta} |",
+        f"| Brier score (lower better) | {_fmt(multi.get('brier_score'))} | "
+        f"{_fmt(base.get('brier_score'))} | {brier_delta} |",
+        f"| MAPE % (lower better) | {_fmt(multi.get('mape_pct'))} | "
+        f"{_fmt(base.get('mape_pct'))} | {mape_delta} |",
+        f"| MAE (INR) (lower better) | {_fmt(multi.get('mae_inr'))} | "
+        f"{_fmt(base.get('mae_inr'))} | {mae_delta} |",
+        f"| Tokens per forecast | {_fmt(multi.get('mean_tokens_per_forecast'))} | "
+        f"{_fmt(base.get('mean_tokens_per_forecast'))} | {token_ratio} |",
+        f"| Seconds per forecast | {_fmt(multi.get('mean_seconds_per_forecast'))} | "
+        f"{_fmt(base.get('mean_seconds_per_forecast'))} | {time_ratio} |",
+        "",
+        f"**Confirmatory Test**: The primary statistical test is the paired date-block bootstrap 95% CI of the difference in directional accuracy ({acc_stats.split('|')[0].strip() if '|' in acc_stats else acc_stats}).",
+        f"**Secondary Paired Test**: {acc_stats.split('|')[1].strip() if '|' in acc_stats else '—'}, labelled optimistic because it assumes cross-ticker independence within sessions.",
+    ]
+    return "\n".join(lines)
 
 def debate_verdict(results: dict[str, dict]) -> str:
     """The headline finding: what the debate bought, and what it cost."""
@@ -296,7 +336,10 @@ def build_report(results: dict[str, dict], *, repeats: int, limit: Optional[int]
         f"_Generated {datetime.now():%Y-%m-%d %H:%M} · {repeats} repeat(s) per "
         f"configuration · {'full test set' if not limit else f'first {limit} cases'}_",
 
-        "## 1. All configurations",
+        "## 1. Primary Research Question: Multi-Agent vs Single-LLM Baseline",
+        primary_comparison_verdict(results),
+
+        "## 2. All Configurations",
         comparison_table(results, ran),
         "Values are means across repeats; ± is the standard deviation across "
         "repeats at fixed temperature, which is the sampling noise of the model "
@@ -304,13 +347,13 @@ def build_report(results: dict[str, dict], *, repeats: int, limit: Optional[int]
         "deliberately: on a trending index an unconditionally bullish rule scores "
         "well on the first and near chance on the second.",
 
-        "## 2. Does the debate earn its cost?",
+        "## 3. Exploratory: Does the debate earn its cost?",
         debate_verdict(results),
 
-        "## 3. Which specialists contribute? (leave-one-out)",
+        "## 4. Exploratory: Which specialists contribute? (leave-one-out)",
         leave_one_out_table(results),
 
-        "## 4. Reproduction",
+        "## 5. Reproduction",
         "```\npython -m evaluate ablate"
         + (f" --repeats {repeats}" if repeats > 1 else "")
         + (f" --limit {limit}" if limit else "")
