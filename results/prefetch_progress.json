@@ -1,0 +1,996 @@
+{
+  "timestamp": "2026-10-16T12:56:30.974747",
+  "completed": 136,
+  "total": 136,
+  "status_counts": {
+    "ok": 134,
+    "empty": 2,
+    "error": 0
+  },
+  "distribution": {
+    "zero": 2,
+    "low_1_to_4": 20,
+    "ge_5": 114
+  },
+  "results": [
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-04-01",
+      "status": "ok",
+      "count": 8,
+      "cached": true
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-04-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-04-01",
+      "status": "ok",
+      "count": 1,
+      "cached": true
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2025-04-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2025-04-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-04-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2025-04-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TATASTEEL.NS",
+      "as_of": "2025-04-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-05-06",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-05-06",
+      "status": "ok",
+      "count": 6,
+      "cached": true
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-05-06",
+      "status": "empty",
+      "count": 0,
+      "cached": true
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "as_of": "2025-05-06",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "as_of": "2025-05-06",
+      "status": "ok",
+      "count": 11,
+      "cached": true
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2025-05-06",
+      "status": "ok",
+      "count": 3,
+      "cached": true
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2025-05-06",
+      "status": "ok",
+      "count": 12,
+      "cached": true
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-05-06",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-06-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-06-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2025-06-04",
+      "status": "empty",
+      "count": 0,
+      "cached": true
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2025-06-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-06-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2025-06-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-06-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2025-06-04",
+      "status": "ok",
+      "count": 5,
+      "cached": true
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2025-07-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-07-03",
+      "status": "ok",
+      "count": 1,
+      "cached": true
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-07-03",
+      "status": "ok",
+      "count": 7,
+      "cached": true
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2025-07-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-07-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2025-07-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2025-07-03",
+      "status": "ok",
+      "count": 4,
+      "cached": true
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2025-07-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-08-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "as_of": "2025-08-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2025-08-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2025-08-01",
+      "status": "ok",
+      "count": 3,
+      "cached": true
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2025-08-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2025-08-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-08-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2025-08-01",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2025-09-03",
+      "status": "ok",
+      "count": 10,
+      "cached": true
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-09-03",
+      "status": "ok",
+      "count": 6,
+      "cached": true
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-09-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2025-09-03",
+      "status": "ok",
+      "count": 6,
+      "cached": true
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2025-09-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2025-09-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-09-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2025-09-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-10-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2025-10-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2025-10-03",
+      "status": "ok",
+      "count": 4,
+      "cached": true
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-10-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2025-10-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2025-10-03",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2025-10-03",
+      "status": "ok",
+      "count": 3,
+      "cached": true
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2025-10-03",
+      "status": "ok",
+      "count": 5,
+      "cached": true
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-11-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2025-11-04",
+      "status": "ok",
+      "count": 12,
+      "cached": true
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-11-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-11-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-11-04",
+      "status": "ok",
+      "count": 7,
+      "cached": true
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-11-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2025-11-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2025-11-04",
+      "status": "ok",
+      "count": 8,
+      "cached": true
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-12-04",
+      "status": "ok",
+      "count": 10,
+      "cached": true
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-12-04",
+      "status": "ok",
+      "count": 11,
+      "cached": true
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-12-04",
+      "status": "ok",
+      "count": 3,
+      "cached": true
+    },
+    {
+      "ticker": "HDFCBANK.NS",
+      "as_of": "2025-12-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2025-12-04",
+      "status": "ok",
+      "count": 12,
+      "cached": true
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2025-12-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-12-04",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2025-12-04",
+      "status": "ok",
+      "count": 7,
+      "cached": true
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-01-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-01-05",
+      "status": "ok",
+      "count": 4,
+      "cached": true
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2026-01-05",
+      "status": "ok",
+      "count": 5,
+      "cached": true
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-01-05",
+      "status": "ok",
+      "count": 8,
+      "cached": true
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2026-01-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2026-01-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2026-01-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-01-05",
+      "status": "ok",
+      "count": 7,
+      "cached": true
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-02-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2026-02-05",
+      "status": "ok",
+      "count": 14,
+      "cached": true
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-02-05",
+      "status": "ok",
+      "count": 1,
+      "cached": true
+    },
+    {
+      "ticker": "HDFCBANK.NS",
+      "as_of": "2026-02-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-02-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-02-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2026-02-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2026-02-05",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2026-03-09",
+      "status": "ok",
+      "count": 7,
+      "cached": true
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-03-09",
+      "status": "ok",
+      "count": 7,
+      "cached": true
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-03-09",
+      "status": "ok",
+      "count": 4,
+      "cached": true
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-03-09",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2026-03-09",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2026-03-09",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-03-09",
+      "status": "ok",
+      "count": 7,
+      "cached": true
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2026-03-09",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2026-04-10",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2026-04-10",
+      "status": "ok",
+      "count": 5,
+      "cached": true
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2026-04-10",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2026-04-10",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-04-10",
+      "status": "ok",
+      "count": 3,
+      "cached": true
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2026-04-10",
+      "status": "ok",
+      "count": 10,
+      "cached": true
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2026-04-10",
+      "status": "ok",
+      "count": 7,
+      "cached": true
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-04-10",
+      "status": "ok",
+      "count": 6,
+      "cached": true
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2026-05-13",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-05-13",
+      "status": "ok",
+      "count": 6,
+      "cached": true
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-05-13",
+      "status": "ok",
+      "count": 3,
+      "cached": true
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2026-05-13",
+      "status": "ok",
+      "count": 2,
+      "cached": true
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2026-05-13",
+      "status": "ok",
+      "count": 15,
+      "cached": true
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2026-05-13",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 116.0
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-05-13",
+      "status": "ok",
+      "count": 2,
+      "cached": false,
+      "elapsed": 11.7
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2026-05-13",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 14.6
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2026-06-12",
+      "status": "ok",
+      "count": 12,
+      "cached": false,
+      "elapsed": 33.4
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-06-12",
+      "status": "ok",
+      "count": 13,
+      "cached": false,
+      "elapsed": 35.5
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-06-12",
+      "status": "ok",
+      "count": 14,
+      "cached": false,
+      "elapsed": 7.9
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-06-12",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 7.2
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2026-06-12",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 17.9
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-06-12",
+      "status": "ok",
+      "count": 3,
+      "cached": false,
+      "elapsed": 15.7
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2026-06-12",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 36.3
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-06-12",
+      "status": "ok",
+      "count": 2,
+      "cached": false,
+      "elapsed": 89.9
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2026-07-14",
+      "status": "ok",
+      "count": 3,
+      "cached": false,
+      "elapsed": 67.9
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-07-14",
+      "status": "ok",
+      "count": 5,
+      "cached": false,
+      "elapsed": 59.0
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2026-07-14",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 125.7
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-07-14",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 8.1
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2026-07-14",
+      "status": "ok",
+      "count": 1,
+      "cached": false,
+      "elapsed": 34.3
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-07-14",
+      "status": "ok",
+      "count": 6,
+      "cached": false,
+      "elapsed": 59.4
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2026-07-14",
+      "status": "ok",
+      "count": 8,
+      "cached": false,
+      "elapsed": 69.7
+    },
+    {
+      "ticker": "TATASTEEL.NS",
+      "as_of": "2026-07-14",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 61.4
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-08-12",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 87.6
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-08-12",
+      "status": "ok",
+      "count": 9,
+      "cached": false,
+      "elapsed": 11.3
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2026-08-12",
+      "status": "ok",
+      "count": 10,
+      "cached": false,
+      "elapsed": 89.8
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-08-12",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 121.4
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-08-12",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 36.8
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "as_of": "2026-08-12",
+      "status": "ok",
+      "count": 14,
+      "cached": false,
+      "elapsed": 9.5
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-08-12",
+      "status": "ok",
+      "count": 2,
+      "cached": false,
+      "elapsed": 4.7
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2026-08-12",
+      "status": "ok",
+      "count": 15,
+      "cached": false,
+      "elapsed": 86.4
+    }
+  ]
+}

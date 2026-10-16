@@ -1,0 +1,1737 @@
+{
+  "run_at": "2026-10-16T14:25:58",
+  "provenance": {
+    "testset_sha256": "8b26948f3169445a675696f6ae262ff6de332f8190cb1ae528e71f14508f6bfd",
+    "git_commit": "bf51a9d6eea7730f0f2de5aaa1b6ddc513842693",
+    "git_dirty": true,
+    "model": "gemini-3.5-flash-lite",
+    "horizon_sessions": 21,
+    "packages": {
+      "pandas": "2.3.3",
+      "numpy": "2.2.6",
+      "pydantic": "2.13.4",
+      "yfinance": "1.5.1",
+      "langgraph": "1.2.6",
+      "google-genai": "2.9.0"
+    },
+    "news_provenance": {
+      "gdelt_allow_http": false,
+      "cache_key_prefix": "news_v5_30d",
+      "case_hashes": {
+        "AXISBANK.NS::2025-04-01": "2bcc96950fdf7ace1bce8d4a80ae8439d010c8f5c391f8b7df7ff85f36530878",
+        "BHARTIARTL.NS::2025-04-01": "a2684ab67785aea060a072acb21639400d973f7e025246c23f33334c24db0b8f",
+        "DRREDDY.NS::2025-04-01": "b49fd961ba716cc39e0820d4865144753ca59fe4bef1fe561d888b1466df82e3",
+        "JSWSTEEL.NS::2025-04-01": "7b5070598f0d1d9d5565dbfbe936ed67e745f7b7678657b7962f207ebf7dbc4a",
+        "MARUTI.NS::2025-04-01": "8c83a6a673726e8cc8ced0b665d5ea17565073b343dfbbcfeb207c6384587db4",
+        "NTPC.NS::2025-04-01": "9df1920fbd179f3291c949ec0d78bb81b3001060d2313a034c7a1123df27d552",
+        "RELIANCE.NS::2025-04-01": "c5675c02d0114024ff6d9fd1712aa9610aead068a67023353fdb2b73a0c4f17b",
+        "TATASTEEL.NS::2025-04-01": "d2a2ec0f5cc129c6bf5979339081f80b36df008d29484d5f327c7847e64c9d3d",
+        "BHARTIARTL.NS::2025-05-06": "c4b1f73764fac7be9f6ce6540371ffc699f4129c5eb202ce3b780858c0ce137a",
+        "CIPLA.NS::2025-05-06": "592721fff3e757449837de1d34a9e4910b9efb35d979de9904dc9b0b96d1f617",
+        "DRREDDY.NS::2025-05-06": "317ad6fab33a2ea03842792181e44c3f27638da2e981e60e7fa9ad7698af739a",
+        "HCLTECH.NS::2025-05-06": "c2598086f26d64bfcbb69e7e893bb5e38626557303779c56ac1597192807c1d1",
+        "NESTLEIND.NS::2025-05-06": "32fd445c16240345463a58519c1fc12a803419de1e0d96d520543b6ffae4b5a0",
+        "POWERGRID.NS::2025-05-06": "37b26f3a1b108f9056e5f92474dd9dbb7342782d46e861da6f402f9ab3791ab9",
+        "SUNPHARMA.NS::2025-05-06": "63f7e7a19de483d2e5672706c4430da3b6a6ec7649f6d0da3de229a87a521a54",
+        "TCS.NS::2025-05-06": "9602bbd0b653fecec955e193c35b5b5c57e5b4035ae81d2c2caf8a658bd7fa21",
+        "BHARTIARTL.NS::2025-06-04": "458d1b88b6ba0d2f3cf7631f39157d77711b93c5348a1fb78e37a5bfd125070f",
+        "HINDUNILVR.NS::2025-06-04": "c9c61ebce9e71fdd4a35070c5d75b0e365874fa939a6e25098c80fa609ad532e",
+        "LT.NS::2025-06-04": "a32e242e5448bad3ae4a7f7710a81781e01ed2ce9e89528a2c3967118d33f86a",
+        "MARUTI.NS::2025-06-04": "8ec0010681b9e1950ff5255f08b9efe8f9f0ae743fabedce3885182ec4a0d63d",
+        "NTPC.NS::2025-06-04": "99f20bad9cc74fa565439bd9135f659bb1edbfe5bd311961233c8b2f81e9658d",
+        "SUNPHARMA.NS::2025-06-04": "b635e601aa15d9c7c5ddc66e76f0538d84660908976a293c4d318d30dc151a39",
+        "TCS.NS::2025-06-04": "076a471c9e737669d4310fecbdd312f9fc21b89d0abf9d1212ddc12e6a909b42",
+        "ULTRACEMCO.NS::2025-06-04": "dcc01ea7d4259b34ee1571a337cd23aec4b199bb52d271ed1621421ef533328a",
+        "ASIANPAINT.NS::2025-07-03": "d85f96c9ed3df167fd94fa6f2f4ac8e389ba9f89de4043ef94d4a4d95c079d21",
+        "DRREDDY.NS::2025-07-03": "ea5d705a58618e3c561528bf36b693ccad239705eb771b778b6050fe2c9b2893",
+        "HINDUNILVR.NS::2025-07-03": "0ee4c710b42288ea0f6e25ba1e7b24151c37a6ec3dfe2b0556b8eb8f49d00805",
+        "INFY.NS::2025-07-03": "60316f517bf3dfd04939cdecf6f1388d2fc7341efb49637160e448e5a7ce9662",
+        "NTPC.NS::2025-07-03": "6a11b30f0510f949d05cc8eb0e22ca58525f36a97daf5e359bb663184c5fe27f",
+        "SBIN.NS::2025-07-03": "18d3e582122ca10b85dfc85f16ec80ba8a072260dbd5f05719e01d8f486ebf92",
+        "TECHM.NS::2025-07-03": "f034608a2e7ca12bf2eb4c2ba89215bde7664843ff52e7569645721dfa24739a",
+        "WIPRO.NS::2025-07-03": "79bc067093702d0da017efcd31afa01b688d8d53586f00b8e60dd0ac49cf3a20",
+        "BHARTIARTL.NS::2025-08-01": "cac73e7c77a8003f29bd5a7f65ad035786cc708aa237ffcf3047dc397da8fb52",
+        "HCLTECH.NS::2025-08-01": "bd09f83fe14fbb4260e60e00f8a9abf1e6c3399ae9ad9360cfe5e7442d67ba54",
+        "KOTAKBANK.NS::2025-08-01": "1881421e9718d746e80c456c0f24d50bc593295d312fda2e18ee1b1c4e764991",
+        "LT.NS::2025-08-01": "fbe29fa2fa3ed4541988167b009fa11ecd33f70b4e3f85ede36df9823fef74c5",
+        "MARUTI.NS::2025-08-01": "e5eccf14e3c68d9ac643defecdb305943ccc5c46f0f683263b47dce65f68541c",
+        "RELIANCE.NS::2025-08-01": "089e8f3fb533baf6b54fba8f3561032f1e955c26c0a2bb5011e0bf06b03cbf24",
+        "TCS.NS::2025-08-01": "9fa3c15449a28b650e8a3e1963e417fb2c7ea5bf7ab5a3a0738c639636c6485c",
+        "TECHM.NS::2025-08-01": "026ec943eb88b7ce0771d1180a0846b1a3ccba392879666d3dfca2752dd0090e",
+        "ASIANPAINT.NS::2025-09-03": "984c616a11b51f9a7a87213f5cddd34c45e87f2a91861431b93cc7d66e8173a7",
+        "CIPLA.NS::2025-09-03": "9c83699c3f5ab970eefb65ba11eab415cd6698b3b050f939e57a16cfaac37c1c",
+        "HINDUNILVR.NS::2025-09-03": "e06eeae19f677e92c77fbce9f262882030a9a0775033f2812e893a0e94afc169",
+        "ITC.NS::2025-09-03": "45449877ce5b3181399a7c447b1749ce391272e619e3c1ca417d23322fe9089c",
+        "ONGC.NS::2025-09-03": "f60b7cfc594d3cf781a0e89ea189636649fa2160a21deaa9669b53cc30d6c6b7",
+        "SBIN.NS::2025-09-03": "530a641f0b3b44a6fb475e8ce1d9c53d2e9f9f52423102332ae47903deeae04c",
+        "TCS.NS::2025-09-03": "3f123e66807da7dc5bae990293559bb32563f45d0ec5a9b5f781a005a144c48a",
+        "WIPRO.NS::2025-09-03": "4756b334728f8085910a5f0764e1baba8089c50487e30984476e8f17f73a29d7",
+        "HINDUNILVR.NS::2025-10-03": "8ebe4e0cb689c2002a65d5da36901c73e974ac27e8b932d7930d06f32bea0fd2",
+        "ICICIBANK.NS::2025-10-03": "2a1018db898df9276c318c2b050d5c9bcd770cc4070f1f8896ca795bd5b2e886",
+        "ITC.NS::2025-10-03": "f17809e937de64ec2684c7f876d679bc6bea54da1d938372703f81a89f7e0049",
+        "NTPC.NS::2025-10-03": "f2353ff782004f793802c9333b446686e9a3e08734f355e3dd5e62d7bac79dae",
+        "SBIN.NS::2025-10-03": "b4ff3778f311901e7a32e970313b7b4da5f1bedea9dab627af8ff1f06b53dc4f",
+        "SUNPHARMA.NS::2025-10-03": "b29432419556e6dca46d7bba9da68f43dab09168d643e8d49d09ff94ef28fe25",
+        "TITAN.NS::2025-10-03": "9836faa216731e5fb3a40f5b078ff7c316968f9d3b133a9ba54617b6b4ccfef1",
+        "ULTRACEMCO.NS::2025-10-03": "252fc8c736300ac8362fa49a1f8b96ecea9fe7c0d730a06ce03339304d75d5b5",
+        "AXISBANK.NS::2025-11-04": "78926875a76661b751aff37a98c9362e5dfddb2eb2801bc67a166ee89873a2e3",
+        "BAJFINANCE.NS::2025-11-04": "cf2f8b95542bb15a45d0b470c85be948fec319a8e0e2c0a214bd6f87d956fffa",
+        "BHARTIARTL.NS::2025-11-04": "38d1d24de654fac3f5350759b977ac60884c206dfaa335e1d5dca92d4c477abf",
+        "CIPLA.NS::2025-11-04": "ccd2b3d89207d65b90c84419f5abf906e0fdfc20dcaffda36ef15f7a53812c47",
+        "DRREDDY.NS::2025-11-04": "0b280bf42c9bc890baa6b1b2a42c522717301f18932bf1bdbe13a85cde68815d",
+        "HINDUNILVR.NS::2025-11-04": "86e9ade437ba2a1e7eba37f29f73fcc4f215ff4326eea5f24610d31a68ec01fa",
+        "ICICIBANK.NS::2025-11-04": "af3c1a78b2dbe3f0525291ce2a356a2f5259b3e13d5008c92756eaa2a0459ae5",
+        "POWERGRID.NS::2025-11-04": "d92df803d60f76959847ac2ba699555c317571367b9b73b3d3751c2198d08c61",
+        "AXISBANK.NS::2025-12-04": "53acb89239ec4289fef343f7af5c66c2e88d6eabed254432558fada38b3f44c4",
+        "CIPLA.NS::2025-12-04": "2a8ff941c5c5beb1550c002b49eaffed85de3366ed5a03bdfca317301499747b",
+        "DRREDDY.NS::2025-12-04": "bb5dbb350069dd624c15bbf5acbf18dda21719569d2622eb41e3300244a251c8",
+        "HDFCBANK.NS::2025-12-04": "8f3e3caabfc3a5e3be6334cee38f2cda98978f74dc55e445b64da355feab8d68",
+        "JSWSTEEL.NS::2025-12-04": "8fd6afae59f38479250890e97fcdb29f559766135e169db565e491bfae209bf3",
+        "ONGC.NS::2025-12-04": "9c9e2360a537f23d88861506e55e306230b2ab0e4c3d425a3d27bb4a61750c50",
+        "TCS.NS::2025-12-04": "e44b09c70fc3573216a27f099f4f4650cbc1a87c53061202b49dd8bb7a36c8e8",
+        "TITAN.NS::2025-12-04": "55a8b92dbfc0cb2cf30b00935c755bb4d512b374e20c6c6210afb802b90d2215",
+        "BAJFINANCE.NS::2026-01-05": "f0cd5a348ac5e317648cbb601b5e9e9a4adebc15e52df76487b3733b8a05b731",
+        "DRREDDY.NS::2026-01-05": "04cf02b620a951d8e0dda436f848d329900fd601fd4797ae11d179da47e20ca5",
+        "HINDUNILVR.NS::2026-01-05": "511c0f30894005aa033ad630a26d62039b75e5246e12bdc7fab9a12f6a1f5fe9",
+        "JSWSTEEL.NS::2026-01-05": "5d7562bda91cbd146238c185c9145596466b583b60b28b6b729d342c4b905f7a",
+        "NTPC.NS::2026-01-05": "4c7f62d77a56bb042c1a7f20c2a18352c5763f8bfe5a6ef7800e82d7e4574029",
+        "SUNPHARMA.NS::2026-01-05": "94347872b285401a5e932870d9fc311f268edf6f6ffadd9df8ba24190110d7ef",
+        "TECHM.NS::2026-01-05": "40a17128128ff7b6bf380e52c582144971c798b166a6b3d494e8ede3d0d26d37",
+        "ULTRACEMCO.NS::2026-01-05": "cdb2a41d2ac4fd4a753b9189bb7875c3fe0dd545c38992c13fa156c93c38ef83",
+        "BAJFINANCE.NS::2026-02-05": "9317563907c45f6c0f6b1962739d961215d94cb4109470a87e8e64fde068d2c2",
+        "CIPLA.NS::2026-02-05": "149585030d51e8e2705a2a4d5ad0a633e8128057fc2f84449a4c063390f81f5f",
+        "DRREDDY.NS::2026-02-05": "7e2d21ddaabdb018dae402a736873f809a16e186319cd193514d877730fe2296",
+        "HDFCBANK.NS::2026-02-05": "3ba77a114d11f76bc0c6132b84b335adb214ca9ab9a2804fcd0d08e22a571c5f",
+        "ITC.NS::2026-02-05": "8f8eaa274be294922fa3ad72765f87198e1ab6ed66af5d4a2a3b02e63ddfc44c",
+        "KOTAKBANK.NS::2026-02-05": "ac4e733f54fe72e30de7df6195063101dfbace977c0845fda5522637372c53df",
+        "SBIN.NS::2026-02-05": "0e749d5e6fd310a9c92a08398aed3ff07b6e7e6f8d2e37b9556fad615b03b435",
+        "TECHM.NS::2026-02-05": "cc47dc569b618eb6356fceb5a0ef342c4aa2fdc8036fbf202d73572470545e34",
+        "ASIANPAINT.NS::2026-03-09": "1db522d59f97aae41e7664fcd935c6334dafe816e7a51760dfebb7d33ec9847b",
+        "BAJFINANCE.NS::2026-03-09": "86d2ba647762ecfa46f908122da20d6da3fb366d839d6a533fa67923add493cb",
+        "ITC.NS::2026-03-09": "12110827fffbeff222850eea7a527592a05696ad3ef1c1a4b923546490d5b904",
+        "KOTAKBANK.NS::2026-03-09": "19361158f65000d25a6920eacdc7d8bbaeec6f08f808e899b7a67b559b75d651",
+        "RELIANCE.NS::2026-03-09": "509c1a888d2db09769db80c826fd43260d3046204ab2aa6787d7c72b5882009f",
+        "TITAN.NS::2026-03-09": "f0fda06ef84624e75bb3577fec53f0d7382876d92bc5d44fb93e11ac48263b64",
+        "ULTRACEMCO.NS::2026-03-09": "c147e32679211a2597a29f20e7b0ab4cb467833ce91a93dd625a86be78a4564c",
+        "WIPRO.NS::2026-03-09": "f7846b15379518b17e3c86cd79fe76a012224536b03482137eb8307527b9e970",
+        "AXISBANK.NS::2026-04-10": "5b1a85adf8f533962d6a17acd3e90400d2b4eb85018c089e673446dc06e914b3",
+        "HINDUNILVR.NS::2026-04-10": "9ab7007fa7a775795acf0db2c4dfa4c27cfac752489cec13d9d5de30b34471bc",
+        "ICICIBANK.NS::2026-04-10": "446f8f41a0b291cb85436990c79d77875cc06560fc342a6d52aeeb8d4501a05e",
+        "NTPC.NS::2026-04-10": "5fa3a1b1af46a87e1988b495bd6c53f1b9ed005bf7659cb3d79cb652827d41e9",
+        "POWERGRID.NS::2026-04-10": "8970931e31f481421375220097fea1fd9f7e63cc799d5d0a7aef236af868c094",
+        "SBIN.NS::2026-04-10": "84a262f6843b092c3939f4f41570801b21af6a9096b7eed391cb59a89c77ae51",
+        "TITAN.NS::2026-04-10": "a8ac4f30c637b43dccf37d1deeeb751157b2ec5ba7e60ea2db13dba13705d09f",
+        "ULTRACEMCO.NS::2026-04-10": "2f3320992c007ad2bb3b1eeb24f6fe431e59248a3b8f24c268f59b6a8971ebb4",
+        "BHARTIARTL.NS::2026-05-13": "ca4ef80625ebbd8798bb4173532594019aa4f700066ed3a5224381eae09934e5",
+        "DRREDDY.NS::2026-05-13": "f968a6f317ec64bda7c66fbc33093f5bc36c29fcc1294d758fdb5651e5d98584",
+        "ITC.NS::2026-05-13": "568e14e729ab9abbabdb0e212b1b8b99fadcdc057e022422b12a27061b210a5c",
+        "LT.NS::2026-05-13": "550db253e527e638563fdd7536fbc8c1642f5b1996fd2ce381613fd8cc38f371",
+        "NTPC.NS::2026-05-13": "e2cd46a36f22a3a87e21368e192be3bb3e67164db57e77fea52aee0772e0f98d",
+        "ONGC.NS::2026-05-13": "c72afa3c4959a617bedce36d800f22c186c2d196c342aa26f628524050d89152",
+        "POWERGRID.NS::2026-05-13": "81cc23dcd18a8e4e180e20b598cf6f86191a8198d839c2359bcdeea712d4244a",
+        "RELIANCE.NS::2026-05-13": "1a99d48cd87d328758b35ac418976d4b0d7942ed818125498bff7681642470b0",
+        "AXISBANK.NS::2026-06-12": "946e31bd652c03446c92014452f5bd81139abfc48961f2433b2e8900ae889d12",
+        "BAJFINANCE.NS::2026-06-12": "0be5c312978dcc71b8eca5133f159d600f6bef897dedd28679cad7205e850577",
+        "ITC.NS::2026-06-12": "4456105432cb863dcb0ca4dab7f158bb358e36ad80b8267c307643cb6d246456",
+        "JSWSTEEL.NS::2026-06-12": "19b76601fcfa65c5a45e126b190b01445997cb99d74857465b92446b5e38b669",
+        "ONGC.NS::2026-06-12": "fc84f7ebf5d04422d15bf5ccc4b963531f7b15aa0413f56277420cb59da81181",
+        "POWERGRID.NS::2026-06-12": "079a424dec0d6fb387744e872d51dda5f75cf72977adea6e5f115e156321b6a9",
+        "TECHM.NS::2026-06-12": "0cc60188f7e5cb74e1b136c3808c28b7aff364bf4726101dd803b306e77574e7",
+        "ULTRACEMCO.NS::2026-06-12": "6e31e648f8fc52372755070b7fce724968d59b92f7cc0af9dbd083dbaa4242b0",
+        "CIPLA.NS::2026-07-14": "3836be7709237cc742fb9b332aa3775bfd343627a2401d60d796acba7e8fc1a0",
+        "DRREDDY.NS::2026-07-14": "ad75eae4c4a295af9ff83555bbd8c170f4b8f8ecb9848d4c6dfd61b930699439",
+        "INFY.NS::2026-07-14": "23f782a7ed5e1b6fc889cf30909251436252a0e34d50ed3035a07e693dc0cf16",
+        "KOTAKBANK.NS::2026-07-14": "a1de974e5626923a96c4bd82fecb9d63e37c06983dd685126d9d109e6b605e75",
+        "LT.NS::2026-07-14": "b24956bfe60248dd6a5457e35c9889543c9a8584a313828eb50786b115715d0f",
+        "POWERGRID.NS::2026-07-14": "114c6a6bf080eeab5fbd23a8b06766f61c8e90552353e1137454dab09b5220ce",
+        "SUNPHARMA.NS::2026-07-14": "af690f02f88dbb3707efe7e3eed0883261643118050148ad655a8383988ef8f4",
+        "TATASTEEL.NS::2026-07-14": "65269dafcd0688749b8dc6ca453c9bf169e95dab9118ea3bd03fc3b322baf036",
+        "BAJFINANCE.NS::2026-08-12": "e69386f32bb4abc9965cf039846be886185555a3a31b835552db45e97c3364e1",
+        "DRREDDY.NS::2026-08-12": "eed36705e060a1f92930e5767f8414668f78ac5bc0e61d001084c01821d81793",
+        "INFY.NS::2026-08-12": "74d1f4f93b837fbc512319201a5d676160296ab5819af91eaeea3a4a490413e6",
+        "JSWSTEEL.NS::2026-08-12": "a2b7ce85355df6d661a6bda457aa02bb1df3c1ceca9c509e0e650a8e8c21bdbd",
+        "KOTAKBANK.NS::2026-08-12": "9730babcb54b3e8d87d7f9b622d00ac4c3651609de8d826918a20cfc1a0a8f4d",
+        "NESTLEIND.NS::2026-08-12": "470b0aa9ce9c28896324d7768527623b21f7aa4bac95a375e4f2aef12233d88f",
+        "POWERGRID.NS::2026-08-12": "c8f438a3ece6fd15cd887ba7b629ce668b42132cf6e3af6ab206549770e432db",
+        "SUNPHARMA.NS::2026-08-12": "b57fc8842bbd90b6ee444c58fae7858492952977fba9afb5d82c0113038d2cec"
+      },
+      "composite_sha256": "479181750658d07cd87c27d661e41c3b0d38ac7fa31b57e7f5404518cf4da57b"
+    }
+  },
+  "probe": {
+    "run_at": "2026-10-16T14:21:26",
+    "model": "gemini-3.5-flash-lite",
+    "tolerance_pct": 0.5,
+    "window": {
+      "start": "2024-01-01",
+      "end": "2026-09-01"
+    },
+    "n_probes": 33,
+    "n_recalled": 0,
+    "latest_recalled_date": null,
+    "median_error_pct": null,
+    "n_event_recalled": 13,
+    "latest_event_recalled_date": "2024-12-26",
+    "latest_any_recalled_date": "2024-12-26",
+    "primary_criterion": "Documented model training cutoff (January 2025 for gemini-3.1-flash-lite) is the primary criterion: all test set as_of dates must begin >= cutoff + 2 months (i.e. >= 2025-04-01). Exact price and dated event recall probes serve as secondary empirical checks.",
+    "recommended_testset_start": "2025-04-01",
+    "interpretation": "Test-set as_of dates must sit post-cutoff. Documented cutoff is primary; empirical probes report both exact index close and dated RBI repo rate events. A refusal is weaker evidence than a wrong answer."
+  },
+  "probes": [
+    {
+      "probe_date": "2024-01-01",
+      "actual_close": 21741.9,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-01-31",
+      "actual_close": 21725.7,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-03-01",
+      "actual_close": 22338.75,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-03-28",
+      "actual_close": 22326.9,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-04-30",
+      "actual_close": 22604.85,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-05-30",
+      "actual_close": 22488.65,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-06-28",
+      "actual_close": 24010.6,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-07-29",
+      "actual_close": 24836.1,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-08-28",
+      "actual_close": 25052.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-09-27",
+      "actual_close": 26178.95,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-10-25",
+      "actual_close": 24180.8,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-11-26",
+      "actual_close": 24194.5,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2024-12-26",
+      "actual_close": 23750.2,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": 6.5,
+      "event_claims_knowledge": true,
+      "event_recalled": true,
+      "event_note": "EVENT RECALLED \u2014 RBI repo rate known"
+    },
+    {
+      "probe_date": "2025-01-24",
+      "actual_close": 23092.2,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.5,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "model declined repo rate \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-02-24",
+      "actual_close": 22553.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.25,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "model declined repo rate \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-03-26",
+      "actual_close": 23486.85,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.25,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "model declined repo rate \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-04-25",
+      "actual_close": 24039.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.0,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "model declined repo rate \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-05-23",
+      "actual_close": 24853.15,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 6.0,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "model declined repo rate \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-06-24",
+      "actual_close": 25044.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 5.5,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "model declined repo rate \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-07-24",
+      "actual_close": 25062.1,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 5.5,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "model declined repo rate \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-08-22",
+      "actual_close": 24870.1,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": 5.5,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "model declined repo rate \u2014 weak evidence the date is post-cutoff"
+    },
+    {
+      "probe_date": "2025-09-22",
+      "actual_close": 25202.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2025-10-21",
+      "actual_close": 25868.6,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2025-11-21",
+      "actual_close": 26068.15,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2025-12-19",
+      "actual_close": 25966.4,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2026-01-20",
+      "actual_close": 25232.5,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2026-02-19",
+      "actual_close": 25454.35,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2026-03-20",
+      "actual_close": 23114.5,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2026-04-20",
+      "actual_close": 24364.85,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2026-05-20",
+      "actual_close": 23659.0,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2026-06-19",
+      "actual_close": 24013.1,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2026-07-17",
+      "actual_close": 24334.3,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    },
+    {
+      "probe_date": "2026-08-18",
+      "actual_close": 24154.9,
+      "claimed_close": null,
+      "claims_knowledge": false,
+      "error_pct": null,
+      "recalled": false,
+      "note": "model declined \u2014 weak evidence the date is post-cutoff",
+      "actual_event_repo_rate": null,
+      "claimed_event_repo_rate": null,
+      "event_claims_knowledge": false,
+      "event_recalled": false,
+      "event_note": "date is past verified RBI decision calendar (through 2025-08-31) \u2014 unverified"
+    }
+  ],
+  "audit": [
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-04-01",
+      "news_items": 8,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 46
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-04-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 40
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-04-01",
+      "news_items": 1,
+      "news_status": "ok",
+      "fundamental_values": 31,
+      "macro_values": 46
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2025-04-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 39
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2025-04-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 39
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-04-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 39
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2025-04-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 39
+    },
+    {
+      "ticker": "TATASTEEL.NS",
+      "as_of": "2025-04-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 39
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-05-06",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 39
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-05-06",
+      "news_items": 6,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 45
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-05-06",
+      "news_items": 0,
+      "news_status": "empty",
+      "fundamental_values": 31,
+      "macro_values": 45
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "as_of": "2025-05-06",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 31,
+      "macro_values": 45
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "as_of": "2025-05-06",
+      "news_items": 11,
+      "news_status": "ok",
+      "fundamental_values": 29,
+      "macro_values": 38
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2025-05-06",
+      "news_items": 3,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 38
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2025-05-06",
+      "news_items": 12,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 45
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-05-06",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 45
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-06-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 39
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-06-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 38
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2025-06-04",
+      "news_items": 0,
+      "news_status": "empty",
+      "fundamental_values": 34,
+      "macro_values": 39
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2025-06-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 38
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-06-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 38
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2025-06-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 45
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-06-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 45
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2025-06-04",
+      "news_items": 5,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 38
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2025-07-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 30,
+      "macro_values": 38
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-07-03",
+      "news_items": 1,
+      "news_status": "ok",
+      "fundamental_values": 32,
+      "macro_values": 45
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-07-03",
+      "news_items": 7,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 38
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2025-07-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 32,
+      "macro_values": 45
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-07-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 38
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2025-07-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 45
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2025-07-03",
+      "news_items": 4,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 45
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2025-07-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 32,
+      "macro_values": 45
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-08-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 40
+    },
+    {
+      "ticker": "HCLTECH.NS",
+      "as_of": "2025-08-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 46
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2025-08-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 46
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2025-08-01",
+      "news_items": 3,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 40
+    },
+    {
+      "ticker": "MARUTI.NS",
+      "as_of": "2025-08-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 39
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2025-08-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 39
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-08-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 46
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2025-08-01",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 46
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2025-09-03",
+      "news_items": 10,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 40
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-09-03",
+      "news_items": 6,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-09-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2025-09-03",
+      "news_items": 6,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2025-09-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 34,
+      "macro_values": 40
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2025-09-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 37,
+      "macro_values": 47
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-09-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2025-09-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 36,
+      "macro_values": 47
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-10-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2025-10-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 35,
+      "macro_values": 47
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2025-10-03",
+      "news_items": 4,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2025-10-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2025-10-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 37,
+      "macro_values": 47
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2025-10-03",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2025-10-03",
+      "news_items": 3,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2025-10-03",
+      "news_items": 5,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-11-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 36,
+      "macro_values": 47
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2025-11-04",
+      "news_items": 12,
+      "news_status": "ok",
+      "fundamental_values": 33,
+      "macro_values": 47
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2025-11-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 41
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-11-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-11-04",
+      "news_items": 7,
+      "news_status": "ok",
+      "fundamental_values": 36,
+      "macro_values": 47
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2025-11-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2025-11-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 35,
+      "macro_values": 47
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2025-11-04",
+      "news_items": 8,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2025-12-04",
+      "news_items": 10,
+      "news_status": "ok",
+      "fundamental_values": 36,
+      "macro_values": 47
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2025-12-04",
+      "news_items": 11,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2025-12-04",
+      "news_items": 3,
+      "news_status": "ok",
+      "fundamental_values": 40,
+      "macro_values": 47
+    },
+    {
+      "ticker": "HDFCBANK.NS",
+      "as_of": "2025-12-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 33,
+      "macro_values": 47
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2025-12-04",
+      "news_items": 12,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2025-12-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "TCS.NS",
+      "as_of": "2025-12-04",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2025-12-04",
+      "news_items": 7,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-01-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 36,
+      "macro_values": 46
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-01-05",
+      "news_items": 4,
+      "news_status": "ok",
+      "fundamental_values": 40,
+      "macro_values": 46
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2026-01-05",
+      "news_items": 5,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 39
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-01-05",
+      "news_items": 8,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 39
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2026-01-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 39
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2026-01-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 46
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2026-01-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 46
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-01-05",
+      "news_items": 7,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 39
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-02-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 36,
+      "macro_values": 47
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2026-02-05",
+      "news_items": 14,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-02-05",
+      "news_items": 1,
+      "news_status": "ok",
+      "fundamental_values": 40,
+      "macro_values": 47
+    },
+    {
+      "ticker": "HDFCBANK.NS",
+      "as_of": "2026-02-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 33,
+      "macro_values": 47
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-02-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 40
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-02-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2026-02-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2026-02-05",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 38,
+      "macro_values": 47
+    },
+    {
+      "ticker": "ASIANPAINT.NS",
+      "as_of": "2026-03-09",
+      "news_items": 7,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-03-09",
+      "news_items": 7,
+      "news_status": "ok",
+      "fundamental_values": 39,
+      "macro_values": 46
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-03-09",
+      "news_items": 4,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-03-09",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 41,
+      "macro_values": 46
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2026-03-09",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2026-03-09",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-03-09",
+      "news_items": 7,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "WIPRO.NS",
+      "as_of": "2026-03-09",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 44,
+      "macro_values": 46
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2026-04-10",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 39,
+      "macro_values": 46
+    },
+    {
+      "ticker": "HINDUNILVR.NS",
+      "as_of": "2026-04-10",
+      "news_items": 5,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "ICICIBANK.NS",
+      "as_of": "2026-04-10",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 41,
+      "macro_values": 46
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2026-04-10",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-04-10",
+      "news_items": 3,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "SBIN.NS",
+      "as_of": "2026-04-10",
+      "news_items": 10,
+      "news_status": "ok",
+      "fundamental_values": 41,
+      "macro_values": 46
+    },
+    {
+      "ticker": "TITAN.NS",
+      "as_of": "2026-04-10",
+      "news_items": 7,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-04-10",
+      "news_items": 6,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 39
+    },
+    {
+      "ticker": "BHARTIARTL.NS",
+      "as_of": "2026-05-13",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 41
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-05-13",
+      "news_items": 6,
+      "news_status": "ok",
+      "fundamental_values": 44,
+      "macro_values": 47
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-05-13",
+      "news_items": 3,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 40
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2026-05-13",
+      "news_items": 2,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 41
+    },
+    {
+      "ticker": "NTPC.NS",
+      "as_of": "2026-05-13",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 40
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2026-05-13",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 40
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-05-13",
+      "news_items": 2,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 40
+    },
+    {
+      "ticker": "RELIANCE.NS",
+      "as_of": "2026-05-13",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 40
+    },
+    {
+      "ticker": "AXISBANK.NS",
+      "as_of": "2026-06-12",
+      "news_items": 12,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 47
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-06-12",
+      "news_items": 13,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 47
+    },
+    {
+      "ticker": "ITC.NS",
+      "as_of": "2026-06-12",
+      "news_items": 14,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 40
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-06-12",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 40
+    },
+    {
+      "ticker": "ONGC.NS",
+      "as_of": "2026-06-12",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 40
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-06-12",
+      "news_items": 3,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 40
+    },
+    {
+      "ticker": "TECHM.NS",
+      "as_of": "2026-06-12",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 47
+    },
+    {
+      "ticker": "ULTRACEMCO.NS",
+      "as_of": "2026-06-12",
+      "news_items": 2,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 40
+    },
+    {
+      "ticker": "CIPLA.NS",
+      "as_of": "2026-07-14",
+      "news_items": 3,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 46
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-07-14",
+      "news_items": 5,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 46
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2026-07-14",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 46
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-07-14",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 40,
+      "macro_values": 46
+    },
+    {
+      "ticker": "LT.NS",
+      "as_of": "2026-07-14",
+      "news_items": 1,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 40
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-07-14",
+      "news_items": 6,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 39
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2026-07-14",
+      "news_items": 8,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 46
+    },
+    {
+      "ticker": "TATASTEEL.NS",
+      "as_of": "2026-07-14",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 39
+    },
+    {
+      "ticker": "BAJFINANCE.NS",
+      "as_of": "2026-08-12",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 42,
+      "macro_values": 46
+    },
+    {
+      "ticker": "DRREDDY.NS",
+      "as_of": "2026-08-12",
+      "news_items": 9,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 46
+    },
+    {
+      "ticker": "INFY.NS",
+      "as_of": "2026-08-12",
+      "news_items": 10,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 46
+    },
+    {
+      "ticker": "JSWSTEEL.NS",
+      "as_of": "2026-08-12",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 39
+    },
+    {
+      "ticker": "KOTAKBANK.NS",
+      "as_of": "2026-08-12",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 40,
+      "macro_values": 46
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "as_of": "2026-08-12",
+      "news_items": 14,
+      "news_status": "ok",
+      "fundamental_values": 41,
+      "macro_values": 39
+    },
+    {
+      "ticker": "POWERGRID.NS",
+      "as_of": "2026-08-12",
+      "news_items": 2,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 39
+    },
+    {
+      "ticker": "SUNPHARMA.NS",
+      "as_of": "2026-08-12",
+      "news_items": 15,
+      "news_status": "ok",
+      "fundamental_values": 46,
+      "macro_values": 46
+    }
+  ],
+  "verdict": [
+    "No blocking issues found."
+  ]
+}
