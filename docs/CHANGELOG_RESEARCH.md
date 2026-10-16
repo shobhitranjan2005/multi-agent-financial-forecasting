@@ -106,8 +106,14 @@ This document tracks changes that could affect the validity or comparability of 
 - **Free-Tier Operational Design & Quota Constraints**:
   - All experiments are executed strictly under the **Google AI Studio Free Tier** (no billing).
   - Pacing enforces `LLM_MAX_RPM` (default 12 RPM).
-  - The daily request quota (~1,500 RPD) is handled as a **pause signal**, not an experiment failure or strict-mode abort. When a daily quota exhaustion occurs, the runner logs progress, pauses, retries every 30 minutes until reset (midnight Pacific), and resumes cleanly from cache.
+  - The daily request quota (actual quota as shown in my AI Studio, recorded in `results/runner_progress.json`) is handled as a **pause signal**, not an experiment failure or strict-mode abort. When a daily quota exhaustion occurs, the runner logs progress, pauses, retries every 30 minutes until reset (midnight Pacific), and resumes cleanly from cache.
   - **Execution Plan**:
     - *Round 1*: `naive-momentum`, `naive-alwaysup`, `baseline`, `multiagent`, `multiagent-nodebate`, followed by the 4 leave-one-out configurations (1 repeat each across the 68-case frozen set).
     - *Round 2*: If and only if Round 1 is complete and quota allows, 2 additional repeats with fresh cache nonces for `baseline`, `multiagent`, and `multiagent-nodebate` only (to measure stochastic sampling variance).
     - If daily quotas or submission deadlines prevent Round 2 from completing, **unfinished rounds will be explicitly reported as unfinished**; the 1-repeat core results will serve as the primary findings with full variance caveats disclosed.
+
+### Pre-Run Provenance Fix: `is_git_dirty()` Ignoring Everything Under `results/` and `data/*.db*`
+- **Date**: 2026-10-17
+- **Scope**: Evaluation harness provenance tracking (`backend/eval/provenance.py`).
+- **Description**: Updated `is_git_dirty()` to ignore all files under `results/` (whether tracked or untracked, e.g. `results/runner_progress.json`, run summaries, markdown reports) and any SQLite database files under `data/` (`*.db*`, `*.db-wal`, `*.db-shm`).
+- **Research Integrity**: Strictly zero changes to forecasts, prompts, schemas, metrics, thresholds, or test cases. Only uncommitted source/config files (e.g. `backend/`, `evaluate.py`, tests) trigger `git_dirty: true`. Ensures provenance accurately distinguishes active evaluation result artifacts from uncommitted code alterations.

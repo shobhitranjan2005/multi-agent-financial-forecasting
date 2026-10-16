@@ -100,9 +100,9 @@ def _news_provenance(testset_path: Path) -> dict:
 def is_git_dirty() -> bool:
     """True if working tree has relevant uncommitted changes.
 
-    Ignores untracked files under results/ and data/ cache or *.db,
-    while modified tracked files and untracked source files elsewhere
-    must still count.
+    Ignores EVERYTHING under results/ (tracked or untracked) and
+    any data/*.db* (cache or checkpoints), while modified source/config
+    files elsewhere must still count.
     """
     raw = _git("status", "--porcelain")
     if not raw:
@@ -112,23 +112,41 @@ def is_git_dirty() -> bool:
             continue
         status = line[:2]
         path = line[3:].strip()
+        if " -> " in path:
+            # Handle renames: orig -> dest
+            parts = [p.strip().strip('"').replace("\\", "/") for p in path.split(" -> ")]
+            if all(
+                p.startswith("results/")
+                or (p.startswith("data/") and (".db" in p or "cache" in p.lower()))
+                or p.startswith("scratch/")
+                for p in parts
+            ):
+                continue
+            return True
+
         if path.startswith('"') and path.endswith('"'):
             path = path[1:-1]
         norm_path = path.replace("\\", "/")
 
-        if status == "??":
-            if norm_path.startswith("results/"):
-                continue
-            if norm_path.startswith("data/") and (
-                norm_path.endswith(".db")
-                or norm_path.endswith(".db-wal")
-                or norm_path.endswith(".db-shm")
-                or "cache" in norm_path.lower()
-            ):
-                continue
-            return True
-        else:
-            return True
+        # Ignore EVERYTHING under results/ (tracked modifications, untracked, etc.)
+        if norm_path.startswith("results/"):
+            continue
+
+        # Ignore any SQLite database or WAL/SHM file under data/
+        if norm_path.startswith("data/") and (
+            norm_path.endswith(".db")
+            or norm_path.endswith(".db-wal")
+            or norm_path.endswith(".db-shm")
+            or norm_path.endswith(".db-journal")
+            or "cache" in norm_path.lower()
+        ):
+            continue
+
+        # Ignore scratch/
+        if norm_path.startswith("scratch/"):
+            continue
+
+        return True
     return False
 
 
