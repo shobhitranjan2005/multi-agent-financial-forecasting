@@ -183,6 +183,24 @@ def cmd_preflight(args) -> int:
     return 0
 
 
+def cmd_subset(args) -> int:
+    from backend.config import Config
+    from backend.eval import provenance, testset as testset_mod
+    src = Path(args.src) if getattr(args, "src", None) else Config.DATA_DIR / "testset_draft_v3.json"
+    dest = Path(args.out) if getattr(args, "out", None) else testset_mod.TESTSET_PATH
+    ts = testset_mod.create_subset(src, per_date=args.per_date, status="FROZEN")
+    try:
+        path = testset_mod.save(ts, path=dest, overwrite=args.overwrite)
+    except FileExistsError as exc:
+        print(f"\n  {exc}\n", file=sys.stderr)
+        return 1
+
+    norm_hash = provenance._sha256(path)
+    print(f"\n  Wrote frozen subset with {ts['n_cases']} cases to {path}")
+    print(f"  SHA-256 (normalised LF): {norm_hash}\n")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="evaluate", description="Leakage-free evaluation harness.")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -198,6 +216,13 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--overwrite", action="store_true", help="DANGER: invalidates existing results")
     b.add_argument("--no-verify", action="store_true", help="skip bhavcopy membership check")
     b.set_defaults(func=cmd_build_testset)
+
+    sb = sub.add_parser("subset", help="create a deterministic subset from draft test set")
+    sb.add_argument("--src", default="", help="source draft test set (default: data/testset_draft_v3.json)")
+    sb.add_argument("--out", default="", help="destination test set (default: data/testset.json)")
+    sb.add_argument("--per-date", type=int, default=4, help="number of cases per date to select in file order")
+    sb.add_argument("--overwrite", action="store_true", help="overwrite destination if exists")
+    sb.set_defaults(func=cmd_subset)
 
     p = sub.add_parser("recall-probe", help="locate the model's training cutoff")
     p.add_argument("--start", required=True)

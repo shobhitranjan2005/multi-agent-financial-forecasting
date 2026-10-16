@@ -194,3 +194,32 @@ def load(path: Path | str = TESTSET_PATH) -> dict:
 
 def cases(path: Path = TESTSET_PATH) -> list[TestCase]:
     return [TestCase(**c) for c in load(path)["cases"]]
+
+
+def create_subset(src_path: Path | str, per_date: int = 4, status: str = "FROZEN") -> dict:
+    """Deterministically take the first `per_date` cases per date in file order.
+
+    Fixed rule: depends only on file order, uses strictly zero forecast or outcome data.
+    Sets status="FROZEN" by default for the final promoted test set.
+    """
+    raw = load(src_path)
+    by_date: dict[str, list[dict]] = {}
+    for c in raw.get("cases", []):
+        d = c["as_of"]
+        if d not in by_date:
+            by_date[d] = []
+        by_date[d].append(c)
+
+    subset_cases: list[dict] = []
+    for d, clist in by_date.items():
+        subset_cases.extend(clist[:per_date])
+
+    out = dict(raw)
+    out["cases"] = subset_cases
+    out["n_cases"] = len(subset_cases)
+    out["subset_rule"] = (
+        f"Deterministic first {per_date} cases per date in file order from {Path(src_path).name} "
+        f"({len(by_date)} dates x {per_date} tickers = {len(subset_cases)} cases). Free-tier feasibility design."
+    )
+    out["status"] = status
+    return out
