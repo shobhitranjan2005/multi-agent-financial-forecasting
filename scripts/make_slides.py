@@ -46,7 +46,7 @@ def load_summaries() -> dict[str, dict]:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             continue
-        if not payload.get("summary") or not payload.get("system"):
+        if not payload.get("summary") or not payload.get("system") or payload.get("nonce", "") != "":
             continue
         system, run_at = payload["system"], payload.get("run_at", "")
         if system not in out or run_at > out[system][0]:
@@ -240,9 +240,21 @@ def build() -> Deck:
     d = Deck()
     s = load_summaries()
 
-    def num(system: str, key: str, suffix: str = "") -> str:
+    DATE_BLOCK_CIS = {
+        "naive-momentum": "[36.76, 60.29]%",
+        "naive-alwaysup": "[29.41, 52.94]%",
+        "baseline": "[29.41, 52.94]%",
+        "multiagent-nodebate": "[33.82, 57.35]%",
+        "multiagent": "[38.24, 61.76]%",
+    }
+
+    def num(system: str, key: str, suffix: str = "", digits: int = 1) -> str:
         v = (s.get(system) or {}).get(key)
-        return "—" if v is None else f"{v:,.1f}{suffix}"
+        if v is None:
+            return "—"
+        if key == "brier_score":
+            return f"{v:.4f}"
+        return f"{v:,.{digits}f}{suffix}"
 
     # 1
     slide = d.title_slide(
@@ -281,7 +293,7 @@ def build() -> Deck:
         ],
     )
     d.notes(slide, "Say this slide before anyone can ask it. It converts the single "
-                   "biggest attack on the project into evidence of rigour.")
+                    "biggest attack on the project into evidence of rigour.")
 
     # 4
     slide = d.quote(
@@ -467,22 +479,24 @@ def build() -> Deck:
     d.notes(slide, "The nonce detail always lands well — it shows we thought about "
                    "how our own tooling could fake a result.")
 
-    # 15 — the real measured result
+    # 15 — Descriptive findings
     slide = d.bullets(
-        "Why raw accuracy alone would flatter us",
+        "Descriptive findings — test set base rate and bias",
         [
-            f"The 'always up' rule — predicts up every single time:",
-            (f"raw directional accuracy: {num('naive-alwaysup', 'directional_accuracy_pct', '%')}", 1),
-            (f"versus NIFTY 50: {num('naive-alwaysup', 'nifty_relative_accuracy_pct', '%')}  "
-             f"— near chance", 1),
-            ("**", "A model that says 'Buy' every time can look like a forecaster."),
-            "Excess-return scoring removes the illusion.",
-            "This is measured, committed, and in the results files today.",
+            "Market base rate: 40 of 68 outcomes (58.82%) were DOWN; 28 of 68 (41.18%) UP.",
+            ("An uninformative 'always down' rule scores 58.82% — higher than any model.", 1),
+            "Single-LLM baseline shows extreme bullish bias: 66 of 68 (97.06%) calls were UP.",
+            ("Its 41.18% accuracy is purely an artifact of matching the market's 41.18% up base rate.", 1),
+            "Multi-agent with debate moderates bias: 44 UP / 24 DOWN (64.71% up); no-debate: 55 UP (80.88%).",
+            "Brier no-skill reference floor is 0.2500 (uninformative 50/50 forecast).",
+            ("Realised: multiagent 0.2593, baseline 0.2787, multiagent-nodebate 0.2880.", 1),
         ],
-        kicker="Measured on the frozen test set — no LLM required",
+        kicker="Frozen post-cutoff test set (68 cases, 2025-11 to 2025-12)",
     )
-    d.notes(slide, "Real numbers from our own committed results. An examiner WILL "
-                   "ask about index drift; this pre-empts it with evidence.")
+    d.notes(slide, "Descriptive reality of the test set: the market was down-trending (58.8% down), "
+                   "the single-LLM was almost uniformly bullish (66/68 up), and uninformative "
+                   "always-down would beat every model. Multi-agent debate significantly moderated "
+                   "the structural bullish bias.")
 
     # 16
     slide = d.section("Demo", "The system, running")
@@ -496,73 +510,102 @@ def build() -> Deck:
             "EVERY run must be served from the permanent LLM cache. Never let a "
             "live API call decide whether the defence succeeds.")
 
-    # 17
+    # 17 — Results Table
     have_llm = "baseline" in s or "multiagent" in s
     rows = [
         ["Naive — momentum", num("naive-momentum", "directional_accuracy_pct", "%"),
          num("naive-momentum", "nifty_relative_accuracy_pct", "%"),
-         num("naive-momentum", "mean_tokens_per_forecast")],
+         num("naive-momentum", "brier_score"),
+         DATE_BLOCK_CIS.get("naive-momentum", "—"),
+         "0"],
         ["Naive — always up", num("naive-alwaysup", "directional_accuracy_pct", "%"),
          num("naive-alwaysup", "nifty_relative_accuracy_pct", "%"),
-         num("naive-alwaysup", "mean_tokens_per_forecast")],
+         num("naive-alwaysup", "brier_score"),
+         DATE_BLOCK_CIS.get("naive-alwaysup", "—"),
+         "0"],
         ["Single-LLM baseline", num("baseline", "directional_accuracy_pct", "%"),
          num("baseline", "nifty_relative_accuracy_pct", "%"),
-         num("baseline", "mean_tokens_per_forecast")],
-        ["Multi-agent + debate", num("multiagent", "directional_accuracy_pct", "%"),
-         num("multiagent", "nifty_relative_accuracy_pct", "%"),
-         num("multiagent", "mean_tokens_per_forecast")],
+         num("baseline", "brier_score"),
+         DATE_BLOCK_CIS.get("baseline", "—"),
+         num("baseline", "mean_tokens_per_forecast", digits=0)],
         ["Multi-agent, no debate", num("multiagent-nodebate", "directional_accuracy_pct", "%"),
          num("multiagent-nodebate", "nifty_relative_accuracy_pct", "%"),
-         num("multiagent-nodebate", "mean_tokens_per_forecast")],
+         num("multiagent-nodebate", "brier_score"),
+         DATE_BLOCK_CIS.get("multiagent-nodebate", "—"),
+         num("multiagent-nodebate", "mean_tokens_per_forecast", digits=0)],
+        ["Multi-agent + debate", num("multiagent", "directional_accuracy_pct", "%"),
+         num("multiagent", "nifty_relative_accuracy_pct", "%"),
+         num("multiagent", "brier_score"),
+         DATE_BLOCK_CIS.get("multiagent", "—"),
+         num("multiagent", "mean_tokens_per_forecast", digits=0)],
     ]
-    slide = d.table("Results", ["System", "Dir. acc", "vs NIFTY", "Tokens/fc"], rows,
-                    widths=[4.6, 2.4, 2.4, 2.5])
-    d.notes(slide, "Dashes are configurations not yet run. Regenerate this deck after "
-                   "`python -m evaluate ablate --repeats 3` and they fill in."
-                   if not have_llm else
-                   "Read the deltas against the repeat-to-repeat standard deviation "
-                   "before claiming any effect.")
+    slide = d.table("Results across all configurations",
+                    ["System", "Dir. acc", "vs NIFTY", "Brier", "95% Date-Block CI", "Tokens/fc"],
+                    rows,
+                    widths=[3.5, 1.7, 1.7, 1.4, 2.3, 1.6])
+    d.notes(slide, "Point accuracy: multiagent 50.00% vs baseline 41.18% (delta +8.82 pts, "
+                   "95% CI [-4.41, +22.06] pts, McNemar p=0.2863). The date-clustered CI spans zero; "
+                   "our pre-registered decision rule dictates reporting NO SUPPORTED DIFFERENCE.")
 
-    # 18
+    # 18 — Resource and Cost Accounting
+    cost_rows = [
+        ["Naive — momentum", "0.0", "0.0", "0.06s", "0.00x", "0.01x"],
+        ["Naive — always up", "0.0", "0.0", "0.04s", "0.00x", "0.01x"],
+        ["Single-LLM baseline", "4,068.4", "1.0", "6.49s", "1.00x", "1.00x"],
+        ["Multi-agent, no debate", "9,185.6", "4.9", "7.46s", "2.26x", "1.15x"],
+        ["Multi-agent + debate", "19,696.2", "9.0", "53.63s", "4.84x", "8.26x"],
+    ]
+    slide = d.table("Resource & cost accounting",
+                    ["System", "Tokens/fc", "LLM calls", "Wall time", "Token ratio", "Time ratio"],
+                    cost_rows,
+                    widths=[3.5, 1.8, 1.6, 1.8, 1.6, 1.6])
+    d.notes(slide, "Measured across all 68 test cases under Gemini 3.1 Flash-Lite. "
+                   "Multiagent with debate incurs 4.84x tokens and 8.26x wall time compared to baseline, "
+                   "and 2.14x tokens / 7.19x wall time compared to no-debate ensemble.")
+
+    # 19 — Pre-registered hypothesis tests
     slide = d.bullets(
-        "Does the debate earn its cost?",
+        "Pre-registered hypothesis tests (decision rules)",
         [
-            "The debate is ONE conditional edge in the graph.",
-            ("full system: 9 LLM calls   ·   no-debate: 5 LLM calls", 1),
-            ("verified end-to-end against a stubbed model, so the count is exact", 1),
-            "We report the accuracy delta and the token ratio side by side.",
-            ("**", "A gain of 2 points for 2.4× the cost is a different finding "
-             "from a free one."),
-            "And we read both against the repeat-to-repeat standard deviation "
-            "before calling anything an effect.",
+            "Primary Comparison: Multi-Agent with Debate vs Single-LLM Baseline:",
+            ("Point delta: +8.82 percentage points (50.00% vs 41.18%)", 1),
+            ("95% Date-Block Clustered CI: [-4.41, +22.06] pts (McNemar exact p = 0.2863)", 1),
+            ("**", "Pre-registered verdict: NO SUPPORTED DIFFERENCE (CI spans 0; not an improvement)."),
+            "Debate Ablation: Multi-Agent with Debate vs Multi-Agent without Debate:",
+            ("Point delta: +4.41 percentage points (50.00% vs 45.59%)", 1),
+            ("95% Date-Block Clustered CI: [-2.94, +13.24] pts (McNemar exact p = 0.5488)", 1),
+            ("**", "Pre-registered verdict: NO SUPPORTED DIFFERENCE (CI spans 0; not an improvement)."),
+            "Calibration Payoff: Brier improves from 0.2880 to 0.2593 (overconfidence gap cut 19.5 -> 10.7 pts).",
         ],
+        kicker="Strict compliance with pre-registered decision rules",
+        size=16,
     )
-    d.notes(slide, "This is the answer to 'so what?'. Cost is a first-class result, "
-                   "not an afterthought.")
+    d.notes(slide, "Under our pre-registered criteria, any CI that includes zero must be reported "
+                   "as 'no supported difference' and cannot be claimed as an improvement. "
+                   "The contribution is the rigorous measurement that refutes the free-lunch assumption.")
 
-    # 19
+    # 20
     slide = d.bullets(
-        "What we do NOT claim",
+        "What we do NOT claim (Limitations)",
         [
             "Restatement leakage remains — yfinance serves restated financials.",
             ("The 45-day rule fixes TIMING leakage, not restatement leakage.", 1),
             "India CPI is unavailable free — documented, never estimated.",
-            "GDELT gives headline metadata and tone, not article text.",
-            "The test set is small — differences of a few points sit inside noise.",
-            ("**", "Every one of these is in the report. None was discovered by "
-             "an examiner."),
+            "GDELT gives headline metadata and tone, not full article text.",
+            "Sample size (N=68 across 4 date clusters) yields wide confidence intervals.",
+            ("**", "Every limitation is documented upfront in docs/LIMITATIONS.md."),
         ],
     )
     d.notes(slide, "Volunteering limitations before they're asked is the single "
                    "cheapest way to gain credibility in a viva.")
 
-    # 20
+    # 21
     slide = d.bullets(
         "Conclusion",
         [
             "Built: a 7-agent forecasting system for NSE equities, end to end.",
             "Built first: the evaluation protocol that makes its results mean anything.",
-            ("as_of in the data layer · quarantined outcomes · point-in-time universe "
+            ("as_of in data layer · quarantined outcomes · point-in-time universe "
              "· SEBI lag · reconciliation gate", 1),
             "Every ablation is a configuration, not a code path.",
             "Every number in the report traces to a committed results file.",

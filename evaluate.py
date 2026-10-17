@@ -132,7 +132,17 @@ def cmd_compare(args) -> int:
 
 
 def cmd_ablate(args) -> int:
-    """Phase 4 in one command: every configuration, every repeat, one report."""
+    """Phase 4: generate ablation report from committed results (or run live with --live)."""
+    if getattr(args, "from_results", True) and not getattr(args, "live", False):
+        comm = ablation.load_committed_results()
+        if comm and any(s in comm for s in ("baseline", "multiagent")):
+            print(f"\n  Generating ablation report from {len(comm)} committed configuration(s) in results/...")
+            path = ablation.write_report(comm, repeats=args.repeats, limit=args.limit)
+            ran = [s for s in ablation.FULL_SUITE if s in comm]
+            print("\n\n" + ablation.comparison_table(comm, ran))
+            print(f"\n  Full report written to {path}\n")
+            return 0
+
     from backend import llm
 
     systems = ([s.strip() for s in args.systems.split(",") if s.strip()]
@@ -269,6 +279,7 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("--repeats", type=int, default=1,
                    help="repeats per configuration; >1 reports variance (unique nonce each)")
     a.add_argument("--limit", type=int, help="cap the number of test cases")
+    a.add_argument("--live", action="store_true", help="run evaluation suite live against API")
     a.set_defaults(func=cmd_ablate)
 
     c = sub.add_parser("compare", help="score several systems side by side")

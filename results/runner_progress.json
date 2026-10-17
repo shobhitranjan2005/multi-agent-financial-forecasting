@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-10-17T10:32:19+00:00",
-  "status": "RUNNING",
+  "updated_at": "2026-10-17T18:06:34+00:00",
+  "status": "PAUSED",
   "current_stage": "round1",
-  "current_system": "multiagent-nodebate",
+  "current_system": "multiagent-no-technical",
   "daily_calls": {
     "2026-10-16": 577,
-    "2026-10-17": 264
+    "2026-10-17": 508
   },
   "pause_history": [
     {
@@ -73,6 +73,60 @@
       "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
       "seconds_to_midnight_pacific": 2090.6,
       "resumed_at": "2026-10-17T07:06:17+00:00"
+    },
+    {
+      "paused_at": "2026-10-17T11:01:38+00:00",
+      "system": "multiagent-no-technical",
+      "nonce": "",
+      "case": "ITC.NS 2026-03-09",
+      "case_num": 47,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 71901.4,
+      "resumed_at": "2026-10-17T11:31:38+00:00"
+    },
+    {
+      "paused_at": "2026-10-17T11:31:43+00:00",
+      "system": "multiagent-no-technical",
+      "nonce": "",
+      "case": "ITC.NS 2026-03-09",
+      "case_num": 47,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 70096.6,
+      "resumed_at": "2026-10-17T17:04:46+00:00"
+    },
+    {
+      "paused_at": "2026-10-17T17:04:55+00:00",
+      "system": "multiagent-no-technical",
+      "nonce": "",
+      "case": "KOTAKBANK.NS 2026-03-09",
+      "case_num": 48,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 50104.0,
+      "resumed_at": "2026-10-17T17:34:55+00:00"
+    },
+    {
+      "paused_at": "2026-10-17T17:34:56+00:00",
+      "system": "multiagent-no-technical",
+      "nonce": "",
+      "case": "KOTAKBANK.NS 2026-03-09",
+      "case_num": 48,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 48303.4,
+      "resumed_at": "2026-10-17T18:06:33+00:00"
+    },
+    {
+      "paused_at": "2026-10-17T18:06:34+00:00",
+      "system": "multiagent-no-technical",
+      "nonce": "",
+      "case": "KOTAKBANK.NS 2026-03-09",
+      "case_num": 48,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 46405.7
     }
   ],
   "completed_systems": [

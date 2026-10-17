@@ -51,6 +51,7 @@ def test_prefetch_skips_cached_cases_and_calls_loader_for_uncached(tmp_path):
     }
 
     with patch("backend.eval.prefetch.Config.CACHE_DB", db_file), \
+         patch("backend.eval.prefetch.PROGRESS_FILE", tmp_path / "prefetch_progress.json"), \
          patch("backend.eval.prefetch._pace"), \
          patch("backend.tools.news_sentiment.get_news", return_value=mock_news) as mock_get_news:
 
@@ -85,6 +86,7 @@ def test_prefetch_retries_on_429(tmp_path):
         return {"status": "ok", "headlines": [{"title": "Infosys Q4"}]}
 
     with patch("backend.eval.prefetch.Config.CACHE_DB", db_file), \
+         patch("backend.eval.prefetch.PROGRESS_FILE", tmp_path / "prefetch_progress.json"), \
          patch("backend.eval.prefetch._pace"), \
          patch("time.sleep") as mock_sleep, \
          patch("backend.tools.news_sentiment.get_news", side_effect=mock_get_news):

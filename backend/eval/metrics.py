@@ -204,6 +204,13 @@ def markdown_table(summaries: list[dict]) -> str:
         cells = []
         for key, _ in cols:
             v = s.get(key)
-            cells.append("—" if v is None else (f"{v:,.2f}" if isinstance(v, float) else str(v)))
+            if v is None:
+                cells.append("—")
+            elif key == "brier_score" and isinstance(v, (int, float)):
+                cells.append(f"{v:.4f}")
+            elif isinstance(v, float):
+                cells.append(f"{v:,.2f}")
+            else:
+                cells.append(str(v))
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)

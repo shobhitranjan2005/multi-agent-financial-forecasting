@@ -102,9 +102,11 @@ def test_ablation_ci_and_pair_stats_synthetic():
     assert "With debate" in deb_report
     assert "Without debate" in deb_report
 
-    # Test build report containing primary section
+    # Test build report containing descriptive, primary, and cost sections
     full_report = build_report(results, repeats=1, limit=None)
-    assert "## 1. Primary Research Question: Multi-Agent vs Single-LLM Baseline" in full_report
-    assert "## 2. All Configurations" in full_report
-    assert "## 3. Exploratory: Does the debate earn its cost?" in full_report
-    assert "## 4. Exploratory: Which specialists contribute? (leave-one-out)" in full_report
+    assert "## 1. Descriptive Findings: Market Base Rates, Model Bias, and Reference Floors" in full_report
+    assert "## 2. Primary Research Question: Multi-Agent vs Single-LLM Baseline" in full_report
+    assert "## 3. All Evaluated Configurations" in full_report
+    assert "## 4. Exploratory: Does the debate earn its cost?" in full_report
+    assert "## 5. Computational Cost and Latency Accounting" in full_report
+    assert "## 6. Exploratory: Which specialists contribute? (leave-one-out)" in full_report

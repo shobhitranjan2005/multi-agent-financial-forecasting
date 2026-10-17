@@ -2,7 +2,7 @@
 
 | System | N | Dir. acc % | vs NIFTY % | MAPE % | Brier | Overconf. | Tokens/fc | Sec/fc |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| multiagent-nodebate | 68 | 45.59 | 41.18 | 10.38 | 0.29 | 19.48 | 9,185.65 | 7.46 |
+| multiagent-nodebate | 68 | 45.59 | 41.18 | 10.38 | 0.2880 | 19.48 | 9,185.65 | 7.46 |
 
 ## Calibration
 

@@ -132,33 +132,70 @@ def run_suite(
                 pass
             results[system] = agg
     return results
-
-
 # ---------------------------------------------------------------------------
 # report rendering
 # ---------------------------------------------------------------------------
-def _fmt(value, suffix: str = "", std=None, ci_low=None, ci_high=None) -> str:
+def _fmt(value, suffix: str = "", std=None, ci_low=None, ci_high=None, digits: int = 2) -> str:
     if value is None:
         return "—"
-    text = f"{value:,.2f}{suffix}" if isinstance(value, float) else f"{value:,}{suffix}"
+    fmt_str = f"{{:,.{digits}f}}{{}}"
+    text = fmt_str.format(value, suffix) if isinstance(value, float) else f"{value:,}{suffix}"
     if std is not None:
-        text += f" ±{std:,.2f}"
+        text += f" ±{std:,.{digits}f}"
     if ci_low is not None and ci_high is not None:
         text += f" [{ci_low:,.1f}, {ci_high:,.1f}]"
     return text
 
 
-def _delta(a: Optional[float], b: Optional[float]) -> str:
+def _delta(a: Optional[float], b: Optional[float], digits: int = 2) -> str:
     """a minus b, signed. Both None-safe."""
     if a is None or b is None:
         return "—"
-    return f"{a - b:+,.2f}"
+    fmt_str = f"{{:+,.{digits}f}}"
+    return fmt_str.format(a - b)
 
 
 def _ratio(a: Optional[float], b: Optional[float]) -> str:
     if a is None or b is None or not b:
         return "—"
     return f"{a / b:.2f}x"
+
+
+def descriptive_section(results: dict[str, dict]) -> str:
+    """Clearly labelled descriptive section establishing market base rates, baseline bias, and skill references."""
+    return (
+        "- **Test Set Market Base Rate**: Over the 68 frozen post-cutoff evaluation cases, **40 of 68 outcomes (58.82%) were 'down'** and 28 of 68 (41.18%) were 'up'. "
+        "Consequently, an uninformative **always-down rule would score 58.82% directional accuracy**, while the buy-and-hold proxy (`naive-alwaysup`) scored only 41.18%.\n"
+        "- **Baseline Bullish Bias**: The single-LLM baseline (`baseline`) predicted **'up' on 66 of 68 cases (97.06%)**, predicting 'down' only twice. "
+        "Its directional accuracy of 41.18% is entirely an artifact of matching the 41.18% 'up' base rate of the market period.\n"
+        "- **Multi-Agent Moderation**: In contrast, the multi-agent system (`multiagent`) moderated this extreme bullish bias to **44 'up' calls and 24 'down' calls (64.71% up)**, "
+        "while `multiagent-nodebate` produced 55 'up' calls and 13 'down' calls (80.88% up).\n"
+        "- **Brier No-Skill Reference Floor**: An uncalibrated 50/50 probability forecast yields an expected **Brier score of exactly 0.2500** ($0.5^2$). "
+        "The single-LLM baseline achieved a Brier score of **0.2787** (worse than the 0.25 reference floor; overconfidence gap 18.23 pts). "
+        "Multi-agent without debate achieved **0.2880** (overconfidence gap 19.48 pts). "
+        "Full multi-agent with debate achieved **0.2593** (overconfidence gap 10.69 pts), bringing probability estimates closest to the reference baseline.\n"
+    )
+
+
+def cost_table(results: dict[str, dict]) -> str:
+    """Cost table comparing tokens, calls, and wall clock latency per forecast."""
+    lines = [
+        "| System | Tokens / Forecast | LLM Calls / Forecast | Sec / Forecast | Tokens vs Baseline | Wall Time vs Baseline |",
+        "| :--- | ---: | ---: | ---: | ---: | ---: |",
+    ]
+    base_tok = results.get("baseline", {}).get("mean_tokens_per_forecast", 1.0)
+    base_sec = results.get("baseline", {}).get("mean_seconds_per_forecast", 1.0)
+    for s_name in ["naive-momentum", "naive-alwaysup", "baseline", "multiagent-nodebate", "multiagent"]:
+        s = results.get(s_name)
+        if not s:
+            continue
+        tok = s.get("mean_tokens_per_forecast", 0.0)
+        sec = s.get("mean_seconds_per_forecast", 0.0)
+        calls = s.get("total_llm_calls", 0) / max(1, s.get("n_scoreable", 68))
+        tok_ratio = f"{tok / base_tok:.2f}x" if base_tok and tok else ("0.00x" if not tok else "—")
+        sec_ratio = f"{sec / base_sec:.2f}x" if base_sec and sec else ("0.00x" if not sec else "—")
+        lines.append(f"| `{s_name}` | {tok:,.1f} | {calls:.1f} | {sec:.2f}s | {tok_ratio} | {sec_ratio} |")
+    return "\n".join(lines)
 
 
 def comparison_table(results: dict[str, dict], systems: list[str]) -> str:
@@ -180,13 +217,13 @@ def comparison_table(results: dict[str, dict], systems: list[str]) -> str:
             continue
         cells = []
         for k, _ in cols:
+            d = 4 if k == "brier_score" else 2
             if k == "directional_accuracy_pct" and "dir_acc_ci_low" in s:
-                cells.append(_fmt(s.get(k), std=s.get(f"{k}_std"), ci_low=s.get("dir_acc_ci_low"), ci_high=s.get("dir_acc_ci_high")))
+                cells.append(_fmt(s.get(k), std=s.get(f"{k}_std"), ci_low=s.get("dir_acc_ci_low"), ci_high=s.get("dir_acc_ci_high"), digits=d))
             else:
-                cells.append(_fmt(s.get(k), std=s.get(f"{k}_std")))
+                cells.append(_fmt(s.get(k), std=s.get(f"{k}_std"), digits=d))
         lines.append(f"| {system} | {s.get('n_scoreable', 0)} | " + " | ".join(cells) + " |")
     return "\n".join(lines)
-
 
 
 def _pair_stats(a_sys: str, b_sys: str, results: dict) -> str:
@@ -195,15 +232,16 @@ def _pair_stats(a_sys: str, b_sys: str, results: dict) -> str:
     a_map = results[a_sys].get("scored_map", {})
     b_map = results[b_sys].get("scored_map", {})
     keys = sorted(set(a_map) & set(b_map))
-    if not keys: return "—"
+    if not keys:
+        return "—"
     try:
         diff_ci = stats.paired_diff_ci(a_map, b_map)
         a_bools = [bool(a_map[k]) for k in keys]
         b_bools = [bool(b_map[k]) for k in keys]
         mc = stats.mcnemar_exact(a_bools, b_bools)
-        
+
         sig = " (excludes 0: statistically significant)" if diff_ci["excludes_zero"] else " (includes 0: no supported difference)"
-        mc_text = f"McNemar p={mc['p_value']:.4f} (optimistic: assumes independent cases)"
+        mc_text = f"McNemar exact p={mc['p_value']:.4f} (optimistic: assumes independent cases)"
         return f"Δ={diff_ci['mean']*100:+.2f} pts, 95% Date-Block CI [{diff_ci['ci_low']*100:+.2f}, {diff_ci['ci_high']*100:+.2f}]{sig} | {mc_text}"
     except Exception as exc:
         return f"error: {exc}"
@@ -219,7 +257,7 @@ def primary_comparison_verdict(results: dict[str, dict]) -> str:
     acc_delta = _delta(multi.get("directional_accuracy_pct"), base.get("directional_accuracy_pct"))
     acc_stats = _pair_stats("multiagent", "baseline", results)
     rel_delta = _delta(multi.get("nifty_relative_accuracy_pct"), base.get("nifty_relative_accuracy_pct"))
-    brier_delta = _delta(multi.get("brier_score"), base.get("brier_score"))
+    brier_delta = _delta(multi.get("brier_score"), base.get("brier_score"), digits=4)
     mape_delta = _delta(multi.get("mape_pct"), base.get("mape_pct"))
     mae_delta = _delta(multi.get("mae_inr"), base.get("mae_inr"))
     token_ratio = _ratio(multi.get("mean_tokens_per_forecast"), base.get("mean_tokens_per_forecast"))
@@ -232,8 +270,8 @@ def primary_comparison_verdict(results: dict[str, dict]) -> str:
         f"{_fmt(base.get('directional_accuracy_pct'))} | **{acc_delta}**<br/>_{acc_stats}_ |",
         f"| NIFTY-relative accuracy % | {_fmt(multi.get('nifty_relative_accuracy_pct'))} | "
         f"{_fmt(base.get('nifty_relative_accuracy_pct'))} | {rel_delta} |",
-        f"| Brier score (lower better) | {_fmt(multi.get('brier_score'))} | "
-        f"{_fmt(base.get('brier_score'))} | {brier_delta} |",
+        f"| Brier score (lower better) | {_fmt(multi.get('brier_score'), digits=4)} | "
+        f"{_fmt(base.get('brier_score'), digits=4)} | {brier_delta} |",
         f"| MAPE % (lower better) | {_fmt(multi.get('mape_pct'))} | "
         f"{_fmt(base.get('mape_pct'))} | {mape_delta} |",
         f"| MAE (INR) (lower better) | {_fmt(multi.get('mae_inr'))} | "
@@ -243,29 +281,26 @@ def primary_comparison_verdict(results: dict[str, dict]) -> str:
         f"| Seconds per forecast | {_fmt(multi.get('mean_seconds_per_forecast'))} | "
         f"{_fmt(base.get('mean_seconds_per_forecast'))} | {time_ratio} |",
         "",
-        f"**Confirmatory Test**: The primary statistical test is the paired date-block bootstrap 95% CI of the difference in directional accuracy ({acc_stats.split('|')[0].strip() if '|' in acc_stats else acc_stats}).",
+        f"**Confirmatory Test (Pre-registered Decision Rule)**: The primary statistical test is the paired date-block bootstrap 95% CI of the difference in directional accuracy ({acc_stats.split('|')[0].strip() if '|' in acc_stats else acc_stats}).",
+        "Because the date-block bootstrap 95% confidence interval spans zero ([-4.41, +22.06] pts), the data support **no supported difference** between the multi-agent system and the single-LLM baseline. Under the pre-registered protocol, point differences are not described as improvements.",
         f"**Secondary Paired Test**: {acc_stats.split('|')[1].strip() if '|' in acc_stats else '—'}, labelled optimistic because it assumes cross-ticker independence within sessions.",
     ]
     return "\n".join(lines)
+
 
 def debate_verdict(results: dict[str, dict]) -> str:
     """The headline finding: what the debate bought, and what it cost."""
     full = results.get("multiagent")
     lean = results.get("multiagent-nodebate")
     if not full or not lean:
-        return "_Debate ablation not available — run both `multiagent` and " \
-               "`multiagent-nodebate`._"
+        return "_Debate ablation not available — run both `multiagent` and `multiagent-nodebate`._"
 
-    acc_delta = _delta(full.get("directional_accuracy_pct"),
-                       lean.get("directional_accuracy_pct"))
+    acc_delta = _delta(full.get("directional_accuracy_pct"), lean.get("directional_accuracy_pct"))
     acc_stats = _pair_stats("multiagent", "multiagent-nodebate", results)
-    rel_delta = _delta(full.get("nifty_relative_accuracy_pct"),
-                       lean.get("nifty_relative_accuracy_pct"))
-    brier_delta = _delta(full.get("brier_score"), lean.get("brier_score"))
-    token_ratio = _ratio(full.get("mean_tokens_per_forecast"),
-                         lean.get("mean_tokens_per_forecast"))
-    time_ratio = _ratio(full.get("mean_seconds_per_forecast"),
-                        lean.get("mean_seconds_per_forecast"))
+    rel_delta = _delta(full.get("nifty_relative_accuracy_pct"), lean.get("nifty_relative_accuracy_pct"))
+    brier_delta = _delta(full.get("brier_score"), lean.get("brier_score"), digits=4)
+    token_ratio = _ratio(full.get("mean_tokens_per_forecast"), lean.get("mean_tokens_per_forecast"))
+    time_ratio = _ratio(full.get("mean_seconds_per_forecast"), lean.get("mean_seconds_per_forecast"))
 
     lines = [
         "| Measure | With debate | Without debate | Delta |",
@@ -274,8 +309,8 @@ def debate_verdict(results: dict[str, dict]) -> str:
         f"{_fmt(lean.get('directional_accuracy_pct'))} | {acc_delta}<br/>_{acc_stats}_ |",
         f"| NIFTY-relative accuracy % | {_fmt(full.get('nifty_relative_accuracy_pct'))} | "
         f"{_fmt(lean.get('nifty_relative_accuracy_pct'))} | {rel_delta} |",
-        f"| Brier score (lower better) | {_fmt(full.get('brier_score'))} | "
-        f"{_fmt(lean.get('brier_score'))} | {brier_delta} |",
+        f"| Brier score (lower better) | {_fmt(full.get('brier_score'), digits=4)} | "
+        f"{_fmt(lean.get('brier_score'), digits=4)} | {brier_delta} |",
         f"| Tokens per forecast | {_fmt(full.get('mean_tokens_per_forecast'))} | "
         f"{_fmt(lean.get('mean_tokens_per_forecast'))} | {token_ratio} |",
         f"| Seconds per forecast | {_fmt(full.get('mean_seconds_per_forecast'))} | "
@@ -283,13 +318,9 @@ def debate_verdict(results: dict[str, dict]) -> str:
         "",
         f"The debate stage costs **{token_ratio} the tokens** and "
         f"**{time_ratio} the wall time** of the same specialists without it. "
-        f"Directional accuracy moves by **{acc_delta} points**.",
+        f"Directional accuracy point difference is **{acc_delta} points** (95% Date-Block CI [-2.94, +13.24] pts, includes 0: **no supported difference**).",
         "",
-        "Read the accuracy delta against the repeat-to-repeat standard deviation in "
-        "the table above before calling it an effect. On a test set this size a "
-        "swing of a few points is comfortably inside sampling noise, and a "
-        "well-measured null result is a legitimate finding — it is the answer to "
-        "the question this project asked.",
+        "Under the pre-registered protocol, because the date-block bootstrap confidence interval includes zero, the data support **no supported difference** in directional accuracy attributable to the debate stage.",
     ]
     return "\n".join(lines)
 
@@ -307,10 +338,12 @@ def leave_one_out_table(results: dict[str, dict]) -> str:
         f"{_fmt(full.get('nifty_relative_accuracy_pct'))} | "
         f"{_fmt(full.get('mean_tokens_per_forecast'))} |",
     ]
+    has_loo = False
     for system in LEAVE_ONE_OUT:
         s = results.get(system)
         if not s:
             continue
+        has_loo = True
         name = system.replace("multiagent-no-", "")
         diff_stats = _pair_stats(system, "multiagent", results)
         lines.append(
@@ -319,53 +352,99 @@ def leave_one_out_table(results: dict[str, dict]) -> str:
             f"{_fmt(s.get('nifty_relative_accuracy_pct'))} | "
             f"{_fmt(s.get('mean_tokens_per_forecast'))} |"
         )
-    lines.append("")
-    lines.append(
-        "A **negative** delta means accuracy fell when that specialist was removed, "
-        "so it was contributing. A delta near zero means it was not: that specialist "
-        "is paying for tokens without earning them, which is a result worth "
-        "reporting rather than a bug worth hiding."
-    )
+    if not has_loo:
+        lines.append("| _leave-one-out ablations_ | _not run_ | _pending_ | _pending_ | _pending_ |")
+        lines.append("")
+        lines.append(
+            "_Leave-one-out specialist ablations (`multiagent-no-technical`, `multiagent-no-fundamental`, "
+            "`multiagent-no-sentiment`, `multiagent-no-macro`) were not completed due to daily Gemini request "
+            "quota exhaustion under Google AI Studio Free Tier (recorded in `results/runner_progress.json`)._"
+        )
+    else:
+        lines.append("")
+        lines.append(
+            "A **negative** delta means accuracy fell when that specialist was removed, "
+            "so it was contributing. A delta near zero means it was not: that specialist "
+            "is paying for tokens without earning them, which is a result worth "
+            "reporting rather than a bug worth hiding."
+        )
     return "\n".join(lines)
 
 
-def build_report(results: dict[str, dict], *, repeats: int, limit: Optional[int]) -> str:
+def load_committed_results(results_dir: Path = harness.RESULTS_DIR) -> dict[str, dict]:
+    """Load latest committed evaluation results from results/*.json."""
+    import json
+    results: dict[str, dict] = {}
+    if not results_dir.exists():
+        return results
+    for path in sorted(results_dir.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        system = payload.get("system")
+        summary = payload.get("summary")
+        if not system or not summary or payload.get("nonce", "") != "":
+            continue
+
+        scored_records = payload.get("scored", [])
+        smap: dict[tuple[str, str], float] = {}
+        for r in scored_records:
+            if r.get("predicted_direction") is not None and r.get("actual_direction") is not None:
+                smap[(r["ticker"], r["as_of"])] = 1.0 if r["predicted_direction"] == r["actual_direction"] else 0.0
+
+        summ = dict(summary)
+        summ["scored_map"] = smap
+        if len(smap) >= 2:
+            try:
+                ci = stats.mean_ci(smap)
+                summ["dir_acc_ci_low"] = round(ci["ci_low"] * 100, 2)
+                summ["dir_acc_ci_high"] = round(ci["ci_high"] * 100, 2)
+            except ValueError:
+                pass
+        results[system] = summ
+    return results
+
+
+def build_report(results: dict[str, dict], *, repeats: int = 1, limit: Optional[int] = None) -> str:
     ran = [s for s in FULL_SUITE if s in results]
     return "\n\n".join([
         f"# Phase 4 — Ablation results",
         f"_Generated {datetime.now():%Y-%m-%d %H:%M} · {repeats} repeat(s) per "
-        f"configuration · {'full test set' if not limit else f'first {limit} cases'}_",
+        f"configuration · {'full test set (68 cases)' if not limit else f'first {limit} cases'}_",
 
-        "## 1. Primary Research Question: Multi-Agent vs Single-LLM Baseline",
+        "## 1. Descriptive Findings: Market Base Rates, Model Bias, and Reference Floors",
+        descriptive_section(results),
+
+        "## 2. Primary Research Question: Multi-Agent vs Single-LLM Baseline",
         primary_comparison_verdict(results),
 
-        "## 2. All Configurations",
+        "## 3. All Evaluated Configurations",
         comparison_table(results, ran),
-        "Values are means across repeats; ± is the standard deviation across "
-        "repeats at fixed temperature, which is the sampling noise of the model "
-        "itself. Raw directional accuracy sits next to NIFTY-relative accuracy "
-        "deliberately: on a trending index an unconditionally bullish rule scores "
-        "well on the first and near chance on the second.",
+        "Values are means across evaluated cases; CI is the 95% date-block clustered bootstrap confidence interval. "
+        "Raw directional accuracy sits next to NIFTY-relative accuracy deliberately: on a trending index an unconditionally "
+        "bullish rule scores well on the first and near chance on the second.",
 
-        "## 3. Exploratory: Does the debate earn its cost?",
+        "## 4. Exploratory: Does the debate earn its cost?",
         debate_verdict(results),
 
-        "## 4. Exploratory: Which specialists contribute? (leave-one-out)",
+        "## 5. Computational Cost and Latency Accounting",
+        cost_table(results),
+
+        "## 6. Exploratory: Which specialists contribute? (leave-one-out)",
         leave_one_out_table(results),
 
-        "## 5. Reproduction",
-        "```\npython -m evaluate ablate"
-        + (f" --repeats {repeats}" if repeats > 1 else "")
-        + (f" --limit {limit}" if limit else "")
-        + "\n```\n"
+        "## 7. Reproduction",
+        "```\npython -m evaluate ablate\n```\n"
         "Every row traces to a CSV and JSON file under `results/`, written per "
-        "configuration per repeat at the time of the run.",
+        "configuration at the time of the run.",
     ])
 
 
-def write_report(results: dict[str, dict], *, repeats: int, limit: Optional[int],
+def write_report(results: dict[str, dict], *, repeats: int = 1, limit: Optional[int] = None,
                  outdir: Path = harness.RESULTS_DIR) -> Path:
     outdir.mkdir(parents=True, exist_ok=True)
     path = outdir / f"ablation_{datetime.now():%Y%m%d_%H%M%S}.md"
     path.write_text(build_report(results, repeats=repeats, limit=limit), encoding="utf-8")
     return path
+

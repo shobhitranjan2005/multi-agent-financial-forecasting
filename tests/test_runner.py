@@ -112,7 +112,9 @@ def _make_dummy_testset(tmp_path: Path) -> Path:
     return p
 
 
-def test_staged_runner_with_fake_clock_and_quota_pause(tmp_path):
+def test_staged_runner_with_fake_clock_and_quota_pause(tmp_path, monkeypatch):
+    from backend.config import Config
+    monkeypatch.setattr(Config, "GEMINI_MODEL", "gemini-3.1-flash-lite")
     ts_file = _make_dummy_testset(tmp_path)
     res_dir = tmp_path / "results"
     prog_file = res_dir / "runner_progress.json"
@@ -187,7 +189,9 @@ def test_staged_runner_with_fake_clock_and_quota_pause(tmp_path):
         assert comp["parse_failures"] == 0
 
 
-def test_staged_runner_stop_condition_on_high_parse_failure(tmp_path):
+def test_staged_runner_stop_condition_on_high_parse_failure(tmp_path, monkeypatch):
+    from backend.config import Config
+    monkeypatch.setattr(Config, "GEMINI_MODEL", "gemini-3.1-flash-lite")
     ts_file = _make_dummy_testset(tmp_path)
     res_dir = tmp_path / "results"
     prog_file = res_dir / "runner_progress.json"
@@ -233,7 +237,9 @@ def test_staged_runner_stop_condition_on_high_parse_failure(tmp_path):
         assert "Parse failure rate" in prog["stop_reason"]
 
 
-def test_staged_runner_stop_condition_on_strict_abort(tmp_path):
+def test_staged_runner_stop_condition_on_strict_abort(tmp_path, monkeypatch):
+    from backend.config import Config
+    monkeypatch.setattr(Config, "GEMINI_MODEL", "gemini-3.1-flash-lite")
     ts_file = _make_dummy_testset(tmp_path)
     res_dir = tmp_path / "results"
     prog_file = res_dir / "runner_progress.json"
