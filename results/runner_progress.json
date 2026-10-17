@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-10-17T07:27:50+00:00",
+  "updated_at": "2026-10-17T10:32:19+00:00",
   "status": "RUNNING",
   "current_stage": "round1",
-  "current_system": "multiagent",
+  "current_system": "multiagent-nodebate",
   "daily_calls": {
     "2026-10-16": 577,
-    "2026-10-17": 180
+    "2026-10-17": 264
   },
   "pause_history": [
     {
@@ -135,7 +135,23 @@
         "json": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\multiagent_20261017_125750.json",
         "markdown": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\multiagent_20261017_125750.md"
       }
+    },
+    {
+      "system": "multiagent-nodebate",
+      "nonce": "",
+      "stage": "round1",
+      "completed_at": "2026-10-17T10:32:19+00:00",
+      "n_scoreable": 68,
+      "directional_accuracy_pct": 45.59,
+      "parse_failures": 0,
+      "parse_failure_rate_pct": 0.0,
+      "files": {
+        "csv": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\multiagent-nodebate_20261017_160219.csv",
+        "json": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\multiagent-nodebate_20261017_160219.json",
+        "markdown": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\multiagent-nodebate_20261017_160219.md"
+      }
     }
   ],
-  "run_started_at": "2026-10-16T20:04:54+00:00"
+  "run_started_at": "2026-10-16T20:04:54+00:00",
+  "stop_reason": "Strict-mode abort: ABORTED RUN (strict mode): evidence or forecaster error on case [46/68] BAJFINANCE.NS 2026-03-09: ReadTimeout: [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond"
 }
