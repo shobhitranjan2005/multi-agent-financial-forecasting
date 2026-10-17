@@ -1,12 +1,80 @@
 {
-  "updated_at": "2026-10-16T21:22:59+00:00",
+  "updated_at": "2026-10-17T07:27:50+00:00",
   "status": "RUNNING",
   "current_stage": "round1",
-  "current_system": "baseline",
+  "current_system": "multiagent",
   "daily_calls": {
-    "2026-10-16": 129
+    "2026-10-16": 577,
+    "2026-10-17": 180
   },
-  "pause_history": [],
+  "pause_history": [
+    {
+      "paused_at": "2026-10-16T22:02:43+00:00",
+      "system": "multiagent",
+      "nonce": "",
+      "case": "AXISBANK.NS 2026-04-10",
+      "case_num": 49,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 32236.2,
+      "resumed_at": "2026-10-16T22:41:48+00:00"
+    },
+    {
+      "paused_at": "2026-10-16T22:41:59+00:00",
+      "system": "multiagent",
+      "nonce": "",
+      "case": "AXISBANK.NS 2026-04-10",
+      "case_num": 49,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 29880.9,
+      "resumed_at": "2026-10-16T23:11:59+00:00"
+    },
+    {
+      "paused_at": "2026-10-16T23:12:09+00:00",
+      "system": "multiagent",
+      "nonce": "",
+      "case": "AXISBANK.NS 2026-04-10",
+      "case_num": 49,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 28070.3,
+      "resumed_at": "2026-10-16T23:46:02+00:00"
+    },
+    {
+      "paused_at": "2026-10-16T23:46:12+00:00",
+      "system": "multiagent",
+      "nonce": "",
+      "case": "AXISBANK.NS 2026-04-10",
+      "case_num": 49,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 26027.3,
+      "resumed_at": "2026-10-17T05:39:22+00:00"
+    },
+    {
+      "paused_at": "2026-10-17T05:39:33+00:00",
+      "system": "multiagent",
+      "nonce": "",
+      "case": "AXISBANK.NS 2026-04-10",
+      "case_num": 49,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 4826.5,
+      "resumed_at": "2026-10-17T06:25:03+00:00"
+    },
+    {
+      "paused_at": "2026-10-17T06:25:09+00:00",
+      "system": "multiagent",
+      "nonce": "",
+      "case": "AXISBANK.NS 2026-04-10",
+      "case_num": 49,
+      "total_cases": 68,
+      "reason": "Daily Gemini quota exhausted. Progress is cached; rerun the same command tomorrow (or enable billing). 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.goog",
+      "seconds_to_midnight_pacific": 2090.6,
+      "resumed_at": "2026-10-17T07:06:17+00:00"
+    }
+  ],
   "completed_systems": [
     {
       "system": "naive-momentum",
@@ -51,6 +119,21 @@
         "csv": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\baseline_20261017_025259.csv",
         "json": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\baseline_20261017_025259.json",
         "markdown": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\baseline_20261017_025259.md"
+      }
+    },
+    {
+      "system": "multiagent",
+      "nonce": "",
+      "stage": "round1",
+      "completed_at": "2026-10-17T07:27:50+00:00",
+      "n_scoreable": 68,
+      "directional_accuracy_pct": 50.0,
+      "parse_failures": 0,
+      "parse_failure_rate_pct": 0.0,
+      "files": {
+        "csv": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\multiagent_20261017_125750.csv",
+        "json": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\multiagent_20261017_125750.json",
+        "markdown": "E:\\My folder\\BTP\\multi-agent-financial-forecasting\\results\\multiagent_20261017_125750.md"
       }
     }
   ],
