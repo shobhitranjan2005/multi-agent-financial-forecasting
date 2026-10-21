@@ -424,11 +424,13 @@ def build() -> Doc:
     else:
         pending("the recall probe has not been run (it requires an API key)")
         d.p(
-            "The probe asks the model for the NIFTY 50 close on specific dates and compares "
-            "the answer to ground truth from the project's own data layer. Dates it can "
-            "recall are inside the training window and are disqualified from the test set. "
-            "Until it runs, the test window's post-cutoff status is argued rather than "
-            "demonstrated, and this is stated as a limitation rather than glossed over."
+            "The price probe asks the model for the NIFTY 50 close on specific dates. It was run on 33 dates "
+            "between January 2024 and August 2026 and the model declined every one, so it cannot separate remembered "
+            "from unknown periods and is reported as uninformative. A second, event-based probe asks for the RBI repo "
+            "rate in force on each date: the model answered correctly for every probed date up to 2024-12-26 and declined "
+            "for every later date, which matches the documented January 2025 knowledge cutoff. The event probe can only be "
+            "scored through 2025-08-31 (5 of the 17 test dates), so the post-cutoff status of the test window rests mainly "
+            "on the documented cutoff; this is stated as a limitation rather than glossed over."
         )
 
     d.h2("6.2 The frozen test set")
@@ -528,7 +530,7 @@ def build() -> Doc:
         )
         d.p(
             "**Confirmatory Test (Pre-registered Decision Rule)**: Clustered uncertainty is estimated via date-block bootstrap "
-            "(2,000 resamples of whole trading sessions), yielding a 95% confidence interval of **[-4.41, +22.06] percentage points**. "
+            "(10,000 resamples of whole as_of dates), yielding a 95% confidence interval of **[-4.41, +22.06] percentage points**. "
             "Because this date-clustered confidence interval spans zero, the pre-registered protocol mandates that this result be reported as "
             "**'no supported difference'** between the multi-agent system and the single-LLM baseline. Under the pre-registered protocol, "
             "point differences are never described as improvements."
@@ -618,8 +620,11 @@ def build() -> Doc:
     d.p(
         "Calibration is scored with a Brier score and a reliability table binned by stated "
         "confidence. Full multi-agent with debate achieved a Brier score of **0.2593** (overconfidence gap 10.69 pts), "
-        "improving calibration relative to single-LLM baseline (**0.2787**, gap 18.23 pts) and multi-agent without debate "
-        "(**0.2880**, gap 19.48 pts), and matching the 0.2500 uninformative reference floor."
+        "against **0.2787** for the single-LLM baseline (gap 18.23 pts) and **0.2880** for multi-agent without debate (gap 19.48 pts). "
+        "Against the baseline the Brier difference is -0.019 (95% date-clustered CI [-0.047, +0.009]): no supported difference. "
+        "Against no-debate it is -0.029 (CI [-0.053, -0.006]); this interval excludes zero, but it is a secondary, exploratory "
+        "comparison among many and is not corrected for multiple testing, so it is reported as suggestive only. The multi-agent "
+        "Brier score (95% CI [0.234, 0.282]) is statistically indistinguishable from the 0.2500 no-skill reference."
     )
 
     d.h1("7. Conclusions")

@@ -575,7 +575,7 @@ def build() -> Deck:
             ("Point delta: +4.41 percentage points (50.00% vs 45.59%)", 1),
             ("95% Date-Block Clustered CI: [-2.94, +13.24] pts (McNemar exact p = 0.5488)", 1),
             ("**", "Pre-registered verdict: NO SUPPORTED DIFFERENCE (CI spans 0; not an improvement)."),
-            "Calibration Payoff: Brier improves from 0.2880 to 0.2593 (overconfidence gap cut 19.5 -> 10.7 pts).",
+            "Calibration (exploratory): Brier 0.2593 vs 0.2880, difference -0.029, CI [-0.053, -0.006]; secondary metric, not corrected for multiple tests.",
         ],
         kicker="Strict compliance with pre-registered decision rules",
         size=16,

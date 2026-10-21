@@ -8,7 +8,7 @@ This document outlines key methodological and engineering limitations of the cur
 The system relies entirely on free, public APIs (e.g., `yfinance` for OHLCV and fundamentals, GDELT for news). These sources are heavily rate-limited and often suffer from missing or messy data (e.g., missing index components like `^CNXAUTO` or spotty mid-cap coverage).
 
 ### News Evidence and Protocol Disclosure
-- **Archival Coverage**: GDELT DOC API provides point-in-time archival Indian financial press headlines (e.g., ~10–25 articles per 30-day lookback for liquid NSE constituents).
+- **Archival Coverage**: in the 136-case candidate audit, 134 cases returned news and 114 (83.8%) had at least 5 headlines passing the title-relevance rule (2 cases returned none).
 - **Protocol Configuration & Sequence**: Remote host `api.gdeltproject.org:443` forcibly closes TLS connections on Windows (`[WinError 10054]` / `curl (35)` TLS handshake reset). Consequently, news is fetched over plain HTTP because HTTPS handshakes were reset on this machine; data is public and keyless; each payload is SHA-256 hashed. The fallback is controlled by `GDELT_ALLOW_HTTP=1` (defaulting to HTTPS when unset).
 - **Operator Syntax & Cache Invalidation**: Query syntax uses FIPS 10-4 country code `sourcecountry:IN` and `sourcelang:eng`. Cache keys are bumped (to `news_v5`) to ensure no stale or unfiltered responses are ever reused.
 - **Headline Relevance & Entity Matching Rules**:
@@ -44,7 +44,7 @@ The evaluation suite evaluates 68 post-cutoff cases distributed across 17 distin
 
 ## 5. Descriptive Findings: Base Rates, Bias, and Reference Floors
 - **Market Base Rate**: Over the 68 frozen test cases, **40 of 68 outcomes (58.82%) were "down"** and 28 of 68 (41.18%) were "up". Consequently, an uninformative **always-down rule would score 58.82% directional accuracy**, outperforming both the single-LLM baseline (41.18%) and the multi-agent system (50.00%).
-- **Baseline Bullish Bias**: The single-LLM baseline (`baseline`) predicted **"up" on 66 of 68 cases (97.06%)**, predicting "down" only twice. Its 41.18% directional accuracy was entirely an artifact of the market's 41.18% "up" base rate.
+- **Baseline Bullish Bias**: The single-LLM baseline (`baseline`) predicted **"up" on 66 of 68 cases (97.06%)**, predicting "down" only twice. Its 41.18% directional accuracy equals the market's 41.18% "up" base rate, i.e. it behaved like an always-up rule.
 - **Multi-Agent Moderation**: The multi-agent debate and risk officer moderated this bias to **44 "up" calls and 24 "down" calls (64.71% up)**.
 - **Brier No-Skill Reference Floor**: An uncalibrated 50/50 probability forecast yields an expected **Brier score of exactly 0.2500**. Realised Brier scores were:
   - `multiagent`: **0.2593** (overconfidence gap: 10.69 pts)
@@ -59,3 +59,16 @@ The evaluation suite evaluates 68 post-cutoff cases distributed across 17 distin
 The research protocol was executed strictly under Google AI Studio Free Tier (no billing).
 - **Daily Quota Ceiling**: With free-tier request quotas, multi-agent systems with debate (which require ~11 calls per forecast) consumed substantial quota, requiring automated 30-minute sleep pauses until midnight Pacific resets.
 - **Ablation Scope**: Round 1 completed `naive-momentum`, `naive-alwaysup`, `baseline`, `multiagent`, and `multiagent-nodebate`. Leave-one-out specialist ablations (`multiagent-no-technical`, `multiagent-no-fundamental`, `multiagent-no-sentiment`, `multiagent-no-macro`) were halted due to daily quota exhaustion.
+
+---
+
+## 6. Experimental Scope Limits (read before citing any result)
+- **Single model.** Every LLM result is for `gemini-3.1-flash-lite` only and may not generalise to other models.
+- **One run per system.** Repeated runs (to quantify LLM sampling variation) were not completed; LLM non-determinism is not quantified.
+- **Leave-one-out ablations incomplete.** They were halted by the free-tier daily request quota (about 500 requests per day observed). No claim is made about individual specialists.
+- **Cost figures** come from the primary runs (cached calls are counted at their original token and latency cost); a separate uncached cost run was not done.
+- **Residual contamination uncertainty.** The documented January 2025 cutoff is the primary criterion and is not a guarantee. The price-recall probe was uninformative (the model declined every date) and the repo-rate event probe covers only 5 of 17 test dates.
+- **Survivorship in the universe.** The seed universe is a hand-picked list of large caps that exist today; the bhavcopy check only confirms that each stock traded on the date, not that it was an index member then.
+- **Realised returns ignore dividends**, and yfinance data and filings may be restated after the fact (timing leakage is addressed, restatement leakage is not).
+- **India-only scope** (NSE), a 21-session horizon, and one market regime (59% of outcomes were "down"). `^CNXAUTO` sector data is unavailable.
+- **Multiple comparisons.** Many secondary comparisons were computed; only the pre-registered primary comparison is confirmatory. Any secondary interval that excludes zero is suggestive only.
